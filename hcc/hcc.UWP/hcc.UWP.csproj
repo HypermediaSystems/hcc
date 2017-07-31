@@ -152,6 +152,14 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\HMSCache.UWP\HMSCache.UWP.csproj">
+      <Project>{1190a867-abd7-41b4-8bdd-ebe659a714b9}</Project>
+      <Name>HMSCache.UWP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\HMSCache\HMSCache.csproj">
+      <Project>{ff239eab-aa28-4d3d-be64-751849b032a7}</Project>
+      <Name>HMSCache</Name>
+    </ProjectReference>
     <ProjectReference Include="..\hcc\hcc.csproj">
       <Project>{aab4b717-1396-406a-9fad-308881af95a1}</Project>
       <Name>hcc</Name>

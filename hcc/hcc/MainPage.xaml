@@ -20,8 +20,11 @@
             <Entry x:Name="tbUrl" Text="https://www.openelevationmap.org/" />
             <Button x:Name="tbGet" Text="Get" Clicked="tbGet_Clicked"/>
             <Button x:Name="tbReload" Text="reload" Clicked="tbReload_Clicked" />
-            <Editor x:Name="tbResult" Text="..." HeightRequest = "500">
+            <Editor x:Name="tbInfo" Text="..." HeightRequest = "300">
                 
+            </Editor>
+            <Editor x:Name="tbContent" Text="..." HeightRequest = "500">
+
             </Editor>
 
         </StackLayout>
