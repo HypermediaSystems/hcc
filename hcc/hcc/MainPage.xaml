@@ -17,7 +17,7 @@
                      Orientation="Vertical"
                      Spacing="15">
             <Label Text="Enter a Url:" />
-            <Entry x:Name="tbUrl" Text="http://www.hypermediasystems.de/index.html" />
+            <Entry x:Name="tbUrl" Text="https://www.openelevationmap.org/" />
             <Button x:Name="tbGet" Text="Get" Clicked="tbGet_Clicked"/>
             <Button x:Name="tbReload" Text="reload" Clicked="tbReload_Clicked" />
             <Editor x:Name="tbResult" Text="..." HeightRequest = "500">
