@@ -13,6 +13,7 @@ namespace HMS.Net.Http
         void SetString(string id, string data, Boolean overwrite);
         void SetData(string id, Byte[] data);
         void SetData(string id, Byte[] data, Boolean overwrite);
+        void Delete(string id);
         Boolean Exists(string id);
         void ClearData(int remain);
         long Count();

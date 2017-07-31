@@ -11,6 +11,11 @@ namespace HMS.Net.Http
 {
     public class HttpCachedClient: HttpClient
     {
+        /// <summary>
+        /// This is the basename of the SQLite database.
+        /// We use this hack, since the XF Dependency Service does not support constructors with parameters.
+        /// </summary>
+        public static string dbName = "hcc";
         private iDataProvider cache;
         /// <summary>
         /// HMSCache
@@ -26,14 +31,17 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetStream(string url, Action<Stream> callback)
+        public async Task<int> GetStream(string url, Action<Stream, hccInfo> callback)
         {
+            hccInfo hi = new hccInfo();
+
             // check if this is in the cache
             byte[] data = this.cache.GetData(url);
             if (data != null)
             {
+                hi.fromDb = true;
                 Stream streamToReadFrom = new MemoryStream(data);
-                callback(streamToReadFrom);
+                callback(streamToReadFrom,hi);
                 return 1;
             }
           
@@ -47,7 +55,7 @@ namespace HMS.Net.Http
                
                 strm.Seek(0, SeekOrigin.Begin);
 
-                callback(strm);
+                callback(strm,hi);
                 return 0;
             }
         }
@@ -57,14 +65,16 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetString(string url, Action<string> callback)
+        public async Task<int> GetString(string url, Action<string, hccInfo> callback)
         {
-            // check if this is in the cache
+            hccInfo hi = new hccInfo();
 
+            // check if this is in the cache
             string data = this.cache.GetString(url);
             if (data != null)
             {
-                callback(data);
+                hi.fromDb = true;
+                callback(data,hi);
                 return 1;
             }
 
@@ -87,7 +97,7 @@ namespace HMS.Net.Http
                 }
                 this.cache.SetString(url, responseString);
 
-                callback(responseString);
+                callback(responseString,hi);
                 return 0;
             }
         }
@@ -98,6 +108,18 @@ namespace HMS.Net.Http
         public void AddStream(string id, byte[] data)
         {
             this.cache.SetData(id, data, true);
+        }
+        public void Delete(string id)
+        {
+            this.cache.Delete(id);
+        }
+    }
+    public class hccInfo
+    {
+        public Boolean fromDb;
+        public hccInfo()
+        {
+            fromDb = false;
         }
     }
 }

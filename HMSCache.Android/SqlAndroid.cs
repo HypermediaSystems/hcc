@@ -14,12 +14,14 @@ namespace HMS.Net.Http.Android.SQLImplementation
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
-        public SqlAndroid(string dbName)
+        public SqlAndroid()
         {
+            string dbName = HttpCachedClient.dbName;
+
             Boolean fehler = false;
             folder = FileSystem.Current.LocalStorage;
 
-            SqlDBName = PortablePath.Combine(folder.Path, dbName + ".sqlite");
+            SqlDBName = PortablePath.Combine(folder.Path,  dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
             if (!System.IO.File.Exists(SqlDBName))

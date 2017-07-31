@@ -1,0 +1,2 @@
+##Install Autofac
+In order to install Autofac in a PCL, you have to to install System.Runtime.InteropServices.RuntimeInformation Version 4.3.0 at first. (s. https://github.com/dotnet/corefx/issues/10445#issuecomment-264929319  )

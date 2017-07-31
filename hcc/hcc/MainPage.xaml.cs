@@ -31,8 +31,9 @@ namespace hcc
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             try
             {
-                await hc.GetString(url, (json) =>
+                await hc.GetString(url, (json,hi) =>
                 {
+                    tbInfo.Text = "" + hi.fromDb.ToString();
                     tbContent.Text = json;
                 });
 
@@ -45,9 +46,27 @@ namespace hcc
         }
 
 
-        private void tbReload_Clicked(object sender, EventArgs e)
+        private async void tbReload_Clicked(object sender, EventArgs e)
         {
+            string url = tbUrl.Text.Trim();
+            tbInfo.Text = "";
 
+            tbContent.Text = "Loading " + url + "...";
+            HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+            hc.Delete(url);
+            try
+            {
+                await hc.GetString(url, (json, hi) =>
+                {
+                    tbInfo.Text = "" + hi.fromDb.ToString();
+                    tbContent.Text = json;
+                });
+
+            }
+            catch (Exception ex)
+            {
+                tbContent.Text = ex.Message + Environment.NewLine + ex.InnerException.Message;
+            }
         }
     }
 }

@@ -17,8 +17,10 @@ namespace HMS.Net.Http.UWP.SQLImplementation
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
-        public SqlUWP(string dbName)
+        public SqlUWP()
         {
+            string dbName = HttpCachedClient.dbName;
+
             Boolean fehler = false;
             folder = FileSystem.Current.LocalStorage;
 
