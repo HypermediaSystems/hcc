@@ -22,6 +22,8 @@ namespace hcc.iOS
         //
         public override bool FinishedLaunching(UIApplication app, NSDictionary options)
         {
+            // we use this hack to get the linker not removing the assembly
+            HMS.Net.Http.iOS.SQLImplementation.SqliOS sqlios = new HMS.Net.Http.iOS.SQLImplementation.SqliOS();
             global::Xamarin.Forms.Forms.Init();
             LoadApplication(new App());
 

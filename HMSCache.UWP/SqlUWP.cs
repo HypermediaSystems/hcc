@@ -17,25 +17,23 @@ namespace HMS.Net.Http.UWP.SQLImplementation
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
-        public SqlUWP()
+        public SqlUWP(Boolean reset = false)
         {
             string dbName = HttpCachedClient.dbName;
 
-            Boolean fehler = false;
             folder = FileSystem.Current.LocalStorage;
 
             SqlDBName = PortablePath.Combine(folder.Path, dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
-            if (!System.IO.File.Exists(SqlDBName))
+            if ( System.IO.File.Exists(SqlDBName) && reset == true )
             {
-                fehler = true;
+                System.IO.File.Delete(SqlDBName);
             }
-            else
-            {
-                fehler = false;
-
-            }
+        }
+        public string GetDBName()
+        {
+            return SqlDBName;
         }
         public SQLiteConnection GetConnection()
         {

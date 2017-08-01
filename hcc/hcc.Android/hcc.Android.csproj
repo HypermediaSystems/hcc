@@ -17,7 +17,7 @@
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v6.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v7.1</TargetFrameworkVersion>
     <AndroidStoreUncompressedFileExtensions />
     <MandroidI18n />
     <JavaMaximumHeapSize />
@@ -151,6 +151,10 @@
     <AndroidResource Include="Resources\values\styles.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\HMSCache.Android\HMSCache.Android.csproj">
+      <Project>{376207e3-ef09-4702-a895-a88e75eafffe}</Project>
+      <Name>HMSCache.Android</Name>
+    </ProjectReference>
     <ProjectReference Include="..\hcc\hcc.csproj">
       <Project>{aab4b717-1396-406a-9fad-308881af95a1}</Project>
       <Name>hcc</Name>

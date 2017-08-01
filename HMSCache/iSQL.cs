@@ -11,5 +11,7 @@ namespace HMS.Net.Http
     {
         SQLiteConnection GetConnection();
         SQLiteAsyncConnection GetAsyncConnection();
+
+        string GetDBName();
     }
 }

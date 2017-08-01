@@ -154,6 +154,16 @@
     <Reference Include="Xamarin.iOS" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\HMSCache.iOS\HMSCache.iOS.csproj">
+      <Project>{cea7d40c-8f0c-4855-8958-a5c06a7d9ec7}</Project>
+      <Name>HMSCache.iOS</Name>
+      <IsAppExtension>false</IsAppExtension>
+      <IsWatchApp>false</IsWatchApp>
+    </ProjectReference>
+    <ProjectReference Include="..\..\HMSCache\HMSCache.csproj">
+      <Project>{ff239eab-aa28-4d3d-be64-751849b032a7}</Project>
+      <Name>HMSCache</Name>
+    </ProjectReference>
     <ProjectReference Include="..\hcc\hcc.csproj">
       <Project>{aab4b717-1396-406a-9fad-308881af95a1}</Project>
       <Name>hcc</Name>

@@ -18,7 +18,7 @@ namespace hcc
         {
             InitializeComponent();
             this.SQL = Xamarin.Forms.DependencyService.Get<iSQL>();
-            this.sqLiteCache = new SqLiteCache(SQL, "");
+            this.sqLiteCache = new SqLiteCache( SQL, "");
 
         }
 
@@ -33,10 +33,19 @@ namespace hcc
             {
                 await hc.GetString(url, (json,hi) =>
                 {
-                    tbInfo.Text = "" + hi.fromDb.ToString();
+                    tbInfo.Text = "fromDB:" + hi.fromDb.ToString() + Environment.NewLine;
+                    tbInfo.Text += "zipped:" + hi.zipped.ToString() + Environment.NewLine;
+                    tbInfo.Text += "encrypted:" + hi.encrypted.ToString() + Environment.NewLine;
+
+                    tbInfo.Text += Environment.NewLine;
+                    foreach (var h in hi.hhh.items)
+                    {
+                        tbInfo.Text += h.Key + ":" + h.Value[0] + Environment.NewLine;
+
+                    }
+
                     tbContent.Text = json;
                 });
-
             }
             catch (Exception ex)
             {
