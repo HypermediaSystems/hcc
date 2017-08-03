@@ -5,16 +5,18 @@ using System;
 using HMS.Net.Http;
 
 using HMS.Net.Http.Android.SQLImplementation;
+using Xamarin.Forms.Internals;
 
 [assembly: Xamarin.Forms.Dependency(typeof(SqlAndroid))]
 namespace HMS.Net.Http.Android.SQLImplementation
 {
+    [Preserve]
     public class SqlAndroid : iSQL
     {
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
-        public SqlAndroid(Boolean reset = false)
+        public SqlAndroid()
         {
             string dbName = HttpCachedClient.dbName;
 
@@ -23,10 +25,16 @@ namespace HMS.Net.Http.Android.SQLImplementation
             SqlDBName = PortablePath.Combine(folder.Path,  dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
-            if (System.IO.File.Exists(SqlDBName) && reset == true)
+        }
+        public Boolean Reset()
+        {
+            Boolean ret = false;
+            if (System.IO.File.Exists(SqlDBName) )
             {
                 System.IO.File.Delete(SqlDBName);
+                ret = true;
             }
+            return ret;
         }
         public string GetDBName()
         {

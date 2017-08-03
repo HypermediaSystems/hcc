@@ -41,7 +41,7 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetStream(string url, Action<Stream, hccInfo> callback)
+        public async Task<int> GetCachedStream(string url, Action<Stream, hccInfo> callback)
         {
             hccInfo hi = new hccInfo();
 
@@ -70,7 +70,7 @@ namespace HMS.Net.Http
           
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
-                string headerString = this.getHeader(response.Headers);
+                string headerString = this.GetCachedHeader(response.Headers);
 
                 Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
 
@@ -90,7 +90,7 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetString(string url, Action<string, hccInfo> callback)
+        public async Task<int> GetCachedString(string url, Action<string, hccInfo> callback)
         {
             hccInfo hi = new hccInfo();
 
@@ -120,7 +120,7 @@ namespace HMS.Net.Http
 
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
-                string headerString = this.getHeader(response.Headers);
+                string headerString = this.GetCachedHeader(response.Headers);
 
                 string responseString = "";
                 Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
@@ -142,7 +142,7 @@ namespace HMS.Net.Http
                 return 0;
             }
         }
-        private string getHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
+        private string GetCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
         {
             string headerString = "";
             foreach (var h in headers)
@@ -158,15 +158,15 @@ namespace HMS.Net.Http
             }
             return headerString;
         }
-        public void AddString(string id, string data)
+        public void AddCachedString(string id, string data)
         {            
             this.cache.SetString(id, data,overwrite: true);
         }
-        public void AddStream(string id, byte[] data)
+        public void AddCachedStream(string id, byte[] data)
         {
             this.cache.SetData(id, data, zipped: 1);
         }
-        public void Delete(string id)
+        public void DeleteCachedData(string id)
         {
             this.cache.Delete(id);
         }

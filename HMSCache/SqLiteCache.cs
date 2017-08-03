@@ -47,15 +47,23 @@ namespace HMS.Net.Http
         SQLiteConnection sqlite3;
         public SqLiteCache(iSQL SQL, string server)
         {
-            this.server = server;
-            // open/create the SQLite db            
-            sqlite3 = SQL.GetConnection();
-
-            sqlite3.CreateTable<SqLiteCacheItem>( );
-            sqlite3.CreateTable<SqLiteMetadata>();
-            if( sqlite3.Table<SqLiteMetadata>().Count() == 0 )
+            try
             {
-                sqlite3.Insert(new SqLiteMetadata());
+                this.server = server;
+                // open/create the SQLite db            
+                sqlite3 = SQL.GetConnection();
+
+                sqlite3.CreateTable<SqLiteCacheItem>();
+                sqlite3.CreateTable<SqLiteMetadata>();
+                if (sqlite3.Table<SqLiteMetadata>().Count() == 0)
+                {
+                    sqlite3.Insert(new SqLiteMetadata());
+                }
+
+            }
+            catch (Exception)
+            {
+
             }
         }
         public void ClearData(int remain)

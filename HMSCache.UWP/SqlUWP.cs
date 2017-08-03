@@ -12,12 +12,12 @@ using HMS.Net.Http.UWP.SQLImplementation;
 [assembly: Xamarin.Forms.Dependency(typeof(SqlUWP))]
 namespace HMS.Net.Http.UWP.SQLImplementation
 {
-    class SqlUWP : iSQL
+    public class SqlUWP : iSQL
     {
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
-        public SqlUWP(Boolean reset = false)
+        public SqlUWP()
         {
             string dbName = HttpCachedClient.dbName;
 
@@ -26,10 +26,16 @@ namespace HMS.Net.Http.UWP.SQLImplementation
             SqlDBName = PortablePath.Combine(folder.Path, dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
-            if ( System.IO.File.Exists(SqlDBName) && reset == true )
+        }
+        public Boolean Reset()
+        {
+            Boolean ret = false;
+            if (System.IO.File.Exists(SqlDBName))
             {
                 System.IO.File.Delete(SqlDBName);
+                ret = true;
             }
+            return ret;
         }
         public string GetDBName()
         {

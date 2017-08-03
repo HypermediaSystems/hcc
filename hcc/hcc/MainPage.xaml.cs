@@ -12,7 +12,7 @@ namespace hcc
     public partial class MainPage : ContentPage
     {
         private iSQL SQL;
-        private SqLiteCache sqLiteCache;
+        private SqLiteCache sqLiteCache = null;
 
         public MainPage()
         {
@@ -31,7 +31,7 @@ namespace hcc
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             try
             {
-                await hc.GetString(url, (json,hi) =>
+                await hc.GetCachedString(url, (json,hi) =>
                 {
                     tbInfo.Text = "fromDB:" + hi.fromDb.ToString() + Environment.NewLine;
                     tbInfo.Text += "zipped:" + hi.zipped.ToString() + Environment.NewLine;
@@ -62,10 +62,10 @@ namespace hcc
 
             tbContent.Text = "Loading " + url + "...";
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
-            hc.Delete(url);
+            hc.DeleteCachedData(url);
             try
             {
-                await hc.GetString(url, (json, hi) =>
+                await hc.GetCachedString(url, (json, hi) =>
                 {
                     tbInfo.Text = "" + hi.fromDb.ToString();
                     tbContent.Text = json;

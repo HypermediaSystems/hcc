@@ -9,6 +9,7 @@ namespace HMS.Net.Http
 {
     public interface iSQL
     {
+        Boolean Reset();
         SQLiteConnection GetConnection();
         SQLiteAsyncConnection GetAsyncConnection();
 
