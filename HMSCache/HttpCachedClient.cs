@@ -13,17 +13,20 @@ namespace HMS.Net.Http
     public class HttpCachedClient: HttpClient
     {
         /// <summary>
-        /// This is the basename of the SQLite database.
-        /// We use this hack, since the XF Dependency Service does not support constructors with parameters.
+        /// This is the basename of the SQLite database.<para/>
+        /// We use this hack, since the XF Dependency Service does not support constructors with parameters.<para/>
+        /// Default is "hcc".
         /// </summary>
         public static string dbName = "hcc";
 
         /// <summary>
-        /// include additonal information in the hccInfo object
+        /// include additonal information in the hccInfo object<para/>
+        /// Default is true.
         /// </summary>
         public static Boolean addInfo = true;
         /// <summary>
-        /// include headers in the hccInfo object
+        /// include headers in the hccInfo object<para/>
+        /// Default is true.
         /// </summary>
         public static Boolean addHeaders = true;
         /// <summary>
@@ -33,18 +36,26 @@ namespace HMS.Net.Http
         /// <para>else, add listed headers</para>
         /// </summary>
         public string[] includeHeaders = null;
+        /// <summary>
+        /// If true, GetCachedString and GetCachedStream do not btry to fetch missing data.<para/>
+        /// Default is false.
+        /// </summary>
+        public Boolean offline = false;
 
         private iDataProvider cache;
         /// <summary>
-        /// HMSCache
+        /// Create a new HttpCachedClient object<para/>
+        /// Currently the cache must be a SqLiteCache object.
         /// </summary>
-        /// <param name="cache"></param>
+        /// <param name="cache">the data provider for this cache,</param>
         public HttpCachedClient(iDataProvider cache) : base()
         {
             this.cache = cache;
         }
         /// <summary>
-        /// HMSCache
+        /// Get the stream for the given url from the cache.<para/>
+        /// If there is no entry found in the cache, the url is requested with GetAsync().<para/>
+        /// This can only be successful for absolute urls.
         /// </summary>
         /// <param name="url"></param>
         /// <param name="callback"></param>
@@ -78,7 +89,7 @@ namespace HMS.Net.Http
           
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
-                string headerString = this.GetCachedHeader(response.Headers);
+                string headerString = this.getCachedHeader(response.Headers);
 
                 Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
 
@@ -93,7 +104,9 @@ namespace HMS.Net.Http
             }
         }
         /// <summary>
-        /// HMSCache
+        /// Get the string for the given url from the cache.<para/>
+        /// If there is no entry found in the cache, the url is requested with GetAsync().<para/>
+        /// This can only be successful for absolute urls.
         /// </summary>
         /// <param name="url"></param>
         /// <param name="callback"></param>
@@ -125,10 +138,11 @@ namespace HMS.Net.Http
                 callback(data,hi);
                 return 1;
             }
+            // ToDo: check for absolute url
 
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
-                string headerString = this.GetCachedHeader(response.Headers);
+                string headerString = this.getCachedHeader(response.Headers);
 
                 string responseString = "";
                 Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
@@ -150,38 +164,76 @@ namespace HMS.Net.Http
                 return 0;
             }
         }
-        private string GetCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
+        private string getCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
         {
             string headerString = "";
             foreach (var h in headers)
             {
-                headerString += h.Key + ": ";
-                string del = "";
-                foreach (var v in h.Value)
+                Boolean skip = false;
+                if (this.includeHeaders == null)
                 {
-                    headerString += del + v;
-                    del = "; ";
+                    skip = true;
                 }
-                headerString += Environment.NewLine;
+                else if (this.includeHeaders.Length > 0)
+                {
+                    skip = !this.includeHeaders.Contains(h.Key);
+                }
+                if (skip == false)
+                {
+                    headerString += h.Key + ": ";
+                    string del = "";
+                    foreach (var v in h.Value)
+                    {
+
+                        headerString += del + v;
+                        del = "; ";
+                    }
+                    headerString += Environment.NewLine;
+                }
             }
             return headerString;
         }
+        /// <summary>
+        /// Get the number of bytes stored in the cache.<para/>
+        /// This includes only the data and the header.<para/>
+        /// </summary>
+        /// <returns></returns>
         public long GetCachedSize()
         {
             return this.cache.Size();
         }
+        /// <summary>
+        /// Get the number of entries stored in the cache.<para/>
+        /// </summary>
+        /// <returns></returns>
         public long GetCachedCount()
         {
             return this.cache.Count();
         }
+        /// <summary>
+        /// Add the given string to the cache.<para/>
+        /// The id may be any string, especially a relative url.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="data"></param>
         public void AddCachedString(string id, string data)
         {            
             this.cache.SetString(id, data,overwrite: true);
         }
+        /// <summary>
+        /// Add the given stream to the cache.<para/>
+        /// The id may be any string, especially a relative url.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="data"></param>
         public void AddCachedStream(string id, byte[] data)
         {
             this.cache.SetData(id, data, zipped: 1);
         }
+        /// <summary>
+        /// Delete the entry from the cache.
+        /// </summary>
+        /// <param name="id"></param>
         public void DeleteCachedData(string id)
         {
             this.cache.Delete(id);

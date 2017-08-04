@@ -8,15 +8,18 @@ using System.Threading.Tasks;
 using HMS.Net.Http;
 
 using HMS.Net.Http.UWP.SQLImplementation;
+using Xamarin.Forms.Internals;
 
 [assembly: Xamarin.Forms.Dependency(typeof(SqlUWP))]
 namespace HMS.Net.Http.UWP.SQLImplementation
 {
+    [Foundation.Preserve(AllMembers = true)]
     public class SqlUWP : iSQL
     {
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
+        [Preserve]
         public SqlUWP()
         {
             string dbName = HttpCachedClient.dbName;

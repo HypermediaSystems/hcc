@@ -19,6 +19,9 @@ namespace hcc.UWP
     {
         public MainPage()
         {
+            // we use this hack to get the linker not removing the assembly
+            // (s. https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed)
+            Xamarin.Forms.DependencyService.Register<HMS.Net.Http.UWP.SQLImplementation.SqlUWP>();
             this.InitializeComponent();
 
             LoadApplication(new hcc.App());

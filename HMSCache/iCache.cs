@@ -29,11 +29,7 @@ namespace HMS.Net.Http
         /// </summary>
         /// <returns></returns>
         long Size();
-        /// <summary>
-        /// migrate the database to the current version, if required
-        /// </summary>
-        /// <returns></returns>
-        Boolean Migrate();
+        
         /// <summary>
         /// reduce the size of the cache
         /// </summary>

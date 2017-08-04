@@ -14,6 +14,10 @@ namespace hcc.Droid
     {
         protected override void OnCreate(Bundle bundle)
         {
+            // we use this hack to get the linker not removing the assembly
+            // (s. https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed)
+            Xamarin.Forms.DependencyService.Register<HMS.Net.Http.Android.SQLImplementation.SqlAndroid>();
+
             TabLayoutResource = Resource.Layout.Tabbar;
             ToolbarResource = Resource.Layout.Toolbar;
 

@@ -64,27 +64,15 @@ namespace hcc
         }
 
 
-        private async void tbReload_Clicked(object sender, EventArgs e)
+        private void tbDelete_Clicked(object sender, EventArgs e)
         {
             string url = tbUrl.Text.Trim();
             tbInfo.Text = "";
 
-            tbContent.Text = "Loading " + url + "...";
+            tbContent.Text = url +  " deleted from cache.";
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             hc.DeleteCachedData(url);
-            try
-            {
-                await hc.GetCachedString(url, (json, hi) =>
-                {
-                    tbInfo.Text = "" + hi.fromDb.ToString();
-                    tbContent.Text = json;
-                });
-
-            }
-            catch (Exception ex)
-            {
-                tbContent.Text = ex.Message + Environment.NewLine + ex.InnerException.Message;
-            }
+            
         }
     }
 }
