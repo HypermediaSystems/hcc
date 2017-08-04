@@ -33,23 +33,32 @@ namespace hcc
             {
                 await hc.GetCachedString(url, (json,hi) =>
                 {
-                    tbInfo.Text = "fromDB:" + hi.fromDb.ToString() + Environment.NewLine;
-                    tbInfo.Text += "zipped:" + hi.zipped.ToString() + Environment.NewLine;
+                    tbInfo.Text =  "fromDB:   " + hi.fromDb.ToString() + Environment.NewLine;
+                    tbInfo.Text += "zipped:   " + hi.zipped.ToString() + Environment.NewLine;
                     tbInfo.Text += "encrypted:" + hi.encrypted.ToString() + Environment.NewLine;
+                    tbInfo.Text += "size:     " + hi.size.ToString() + Environment.NewLine;
 
                     tbInfo.Text += Environment.NewLine;
-                    foreach (var h in hi.hhh.items)
+                    if (hi.hhh != null)
                     {
-                        tbInfo.Text += h.Key + ":" + h.Value[0] + Environment.NewLine;
+                        tbInfo.Text += "Header-Info:" + Environment.NewLine;
+                        foreach (var h in hi.hhh.items)
+                        {
+                            tbInfo.Text += "    " + h.Key + ":" + h.Value[0] + Environment.NewLine;
 
+                        }
                     }
-
+                    tbInfo.Text += "Cache-Info:" + Environment.NewLine;
+                    tbInfo.Text += "    Size: " + hc.GetCachedSize().ToString() +  Environment.NewLine;
+                    tbInfo.Text += "    Count:" + hc.GetCachedCount().ToString() + Environment.NewLine;
                     tbContent.Text = json;
                 });
             }
             catch (Exception ex)
             {
-                tbContent.Text = ex.Message + Environment.NewLine + ex.InnerException.Message;
+                tbContent.Text = ex.Message + Environment.NewLine;
+                if(ex.InnerException != null )
+                    tbContent.Text += ex.InnerException.Message;
             }
 
         }

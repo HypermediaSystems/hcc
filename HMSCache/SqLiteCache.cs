@@ -7,28 +7,54 @@ using System.Threading.Tasks;
 
 namespace HMS.Net.Http
 {
+    public class SqLiteCacheItemAttribute : Attribute
+    {
+        /// <summary>
+        /// we use this value when we have to migrate an existing database
+        /// </summary>
+        public string Version { get; set; }
+    }
     public class SqLiteCacheItem: iDataItem
     {
+        [SqLiteCacheItemAttribute(Version = "1.0")]
         [PrimaryKey]
         public string url { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.0")]
         public byte[] data { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.0")]
         public byte[] header { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.0")]
         public byte zipped { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.0")]
         public byte encrypted { get; set; }
-        public DateTime loaded { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.1")]
+        public DateTime lastWrite { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.1")]
+        public DateTime lastRead { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.1")]
         public DateTime expire { get; set; }
+        [SqLiteCacheItemAttribute(Version = "1.1")]
+        public long size { get; set; }
 
         public SqLiteCacheItem()
         {
             this.zipped = 1;
             this.encrypted = 0;
-            this.loaded = DateTime.Now;
+            this.lastWrite = DateTime.Now;
+            this.lastRead = DateTime.Now;
             this.header = null;
         }
         public SqLiteCacheItem(SqLiteCacheItem src)
         {
-            this.zipped = src.zipped;
+            this.data = src.data;
             this.encrypted = src.encrypted;
+            this.expire = src.expire;
+            this.header = src.header;
+            this.lastRead = src.lastRead;
+            this.lastWrite = src.lastWrite;
+            this.size = src.size;
+            this.zipped = src.zipped;
+
         }
     }
     public class SqLiteMetadata
@@ -37,7 +63,7 @@ namespace HMS.Net.Http
         public string version { get; set; }
         public SqLiteMetadata()
         {
-            this.version = "1.0";
+            this.version = "1.1";
         }
     }
     public class SqLiteCache: iDataProvider
@@ -66,13 +92,39 @@ namespace HMS.Net.Http
 
             }
         }
-        public void ClearData(int remain)
+        public Boolean Migrate()
+        {
+            throw new Exception("not implemented");
+
+            // return false;
+        }
+        public long Reduce(long maxSize = 0, long maxCount = 0)
+        {
+            if( maxSize > 0 )
+            {
+
+            }
+            else if(maxCount > 0)
+            {
+
+            }
+            throw new Exception("not implemented");
+
+            // return 0;
+        }
+        public void ClearData()
         {
             sqlite3.Execute("DELETE * FROM " + typeof(SqLiteCacheItem).Name);            
         }
         public long Count()
         {
             return sqlite3.Table<SqLiteCacheItem>().Count();
+        }
+        public long Size()
+        {
+            var qry =  sqlite3.ExecuteScalar<long>("Select Sum(Size) as SIZE from " + typeof(SqLiteCacheItem).Name);
+
+            return qry;
         }
         private string clearUrl(string url)
         {
@@ -122,10 +174,17 @@ namespace HMS.Net.Http
                         data = gzip.Decompress(data, 0, data.Length);
                     }
 
+                    // set the lastRead
+                    this.updateLastRead(sqlEntry.url);
+                    
                     return data;
                 }
             }
             return null;
+        }
+        private void updateLastRead(string url)
+        {
+            sqlite3.Execute("Update " + typeof(SqLiteCacheItem).Name + " set lastRead = ? Where Url = ?",DateTime.Now,url);
         }
         public hccHttpHeaders GetHeaders(string url)
         {
@@ -184,10 +243,12 @@ namespace HMS.Net.Http
                 ci.data = gzip.Compress(ci.data, 0, ci.data.Length);
                 ci.zipped = zipped;
             }
+            ci.size = ci.data.Length;
             if( !string.IsNullOrEmpty(headers) )
             {
                 byte[] headerData = Encoding.UTF8.GetBytes(headers);
                 ci.header = gzip.Compress(headerData, 0, headerData.Length);
+                ci.size += ci.header.Length;
             }
             try
             {

@@ -19,11 +19,19 @@ namespace HMS.Net.Http
         public static string dbName = "hcc";
 
         /// <summary>
-        /// 
+        /// include additonal information in the hccInfo object
         /// </summary>
         public static Boolean addInfo = true;
+        /// <summary>
+        /// include headers in the hccInfo object
+        /// </summary>
         public static Boolean addHeaders = true;
-
+        /// <summary>
+        /// <para>list of headers to include in the hccInfo object</para>
+        /// <para>null, add no headers,</para>
+        /// <para>empty, add all headers</para>
+        /// <para>else, add listed headers</para>
+        /// </summary>
         public string[] includeHeaders = null;
 
         private iDataProvider cache;
@@ -158,6 +166,14 @@ namespace HMS.Net.Http
             }
             return headerString;
         }
+        public long GetCachedSize()
+        {
+            return this.cache.Size();
+        }
+        public long GetCachedCount()
+        {
+            return this.cache.Count();
+        }
         public void AddCachedString(string id, string data)
         {            
             this.cache.SetString(id, data,overwrite: true);
@@ -184,8 +200,10 @@ namespace HMS.Net.Http
         public Boolean withInfo { get; set; }
         public byte zipped { get; set; }
         public byte encrypted { get; set; }
-        public DateTime loaded { get; set; }
+        public DateTime lastWrite { get; set; }
+        public DateTime lastRead { get; set; }
         public DateTime expire { get; set; }
+        public long size { get; set; }
         public hccHttpHeaders hhh { get; set; }
 
         public Boolean fromDb { get; set; }
@@ -196,10 +214,12 @@ namespace HMS.Net.Http
         }
         public void set(iDataItem src)
         {
-            this.zipped = src.zipped;
             this.encrypted = src.encrypted;
-            this.loaded = src.loaded;
             this.expire = src.expire;
+            this.lastRead = src.lastRead;
+            this.lastWrite = src.lastWrite;
+            this.size = src.size;
+            this.zipped = src.zipped;
         }
     }
 }
