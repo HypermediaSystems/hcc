@@ -31,6 +31,11 @@ namespace hcc
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             try
             {
+                hc.authenticationHeaderValue = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic",
+                    Convert.ToBase64String(
+                        System.Text.UTF8Encoding.UTF8.GetBytes(
+                            string.Format("{0}:{1}", "helmut.theis@hypermediasystems.de", "mds"))));
+
                 await hc.GetCachedString(url, (json,hi) =>
                 {
                     tbInfo.Text =  "fromDB:   " + hi.fromDb.ToString() + Environment.NewLine;

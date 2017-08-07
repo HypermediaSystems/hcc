@@ -6,8 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace HMS.Net.Http
-{    
-    public class SqLiteCacheItem: iDataItem
+{
+    public class SqLiteCacheItem : iDataItem
     {
         [PrimaryKey]
         public string url { get; set; }
@@ -19,7 +19,7 @@ namespace HMS.Net.Http
         public DateTime lastRead { get; set; }
         public DateTime expire { get; set; }
         public long size { get; set; }
-
+        public Boolean dontRemove { get;set; }
 
         public SqLiteCacheItem()
         {

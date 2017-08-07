@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,6 +42,10 @@ namespace HMS.Net.Http
         /// Default is false.
         /// </summary>
         public Boolean offline = false;
+        /// <summary>
+        /// this optional AuthenticationHeaderValue will be assigned to HttpClient.DefaultRequestHeaders.Authorization
+        /// </summary>
+        public AuthenticationHeaderValue authenticationHeaderValue = null;
 
         private iDataProvider cache;
         /// <summary>
@@ -86,7 +91,8 @@ namespace HMS.Net.Http
                 callback(streamToReadFrom,hi);
                 return 1;
             }
-          
+            if (this.authenticationHeaderValue != null)
+                this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
                 string headerString = this.getCachedHeader(response.Headers);
@@ -139,6 +145,8 @@ namespace HMS.Net.Http
                 return 1;
             }
             // ToDo: check for absolute url
+            if (this.authenticationHeaderValue != null)
+                this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
 
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
@@ -256,6 +264,7 @@ namespace HMS.Net.Http
         public DateTime lastRead { get; set; }
         public DateTime expire { get; set; }
         public long size { get; set; }
+        public Boolean dontRemove { get; set; }
         public hccHttpHeaders hhh { get; set; }
 
         public Boolean fromDb { get; set; }
@@ -266,6 +275,7 @@ namespace HMS.Net.Http
         }
         public void set(iDataItem src)
         {
+            this.dontRemove = src.dontRemove;
             this.encrypted = src.encrypted;
             this.expire = src.expire;
             this.lastRead = src.lastRead;

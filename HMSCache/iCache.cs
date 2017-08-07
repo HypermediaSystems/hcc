@@ -39,13 +39,13 @@ namespace HMS.Net.Http
         long Reduce(long maxSize=0, long maxCount=0);
     }
     public interface iDataItem
-    {
+    {        
         byte zipped { get; set; }
         byte encrypted { get; set; }
-        
         DateTime lastWrite { get; set; }
         DateTime lastRead { get; set; }
         DateTime expire { get; set; }
         long size { get; set; }
+        Boolean dontRemove { get; set; }
     }
 }
