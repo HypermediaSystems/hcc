@@ -333,7 +333,12 @@ namespace HMS.Net.Http
         {
             return this.cache.Count();
         }
-
+        /// <summary>
+        /// Get the list of cached URLs that contains the text pattern.<para/>
+        /// The list is sorted descending by LastRead and limited by this.SqlLimit.<para/>
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <returns></returns>
         public string[] GetCachedUrls(string pattern)
         {
             return this.cache.GetIDs(pattern,this.SqlLimit);
