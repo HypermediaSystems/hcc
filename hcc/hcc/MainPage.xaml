@@ -16,10 +16,45 @@
                      HorizontalOptions="FillAndExpand"
                      Orientation="Vertical"
                      Spacing="15">
-            <Label Text="Enter a Url:" />
-            <Entry x:Name="tbUrl" Text="https://www.openelevationmap.org/" />
+            <Grid ColumnSpacing="10"
+                    RowSpacing="10"
+                    HorizontalOptions="FillAndExpand"
+                    VerticalOptions="Start">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="7*" />
+                </Grid.ColumnDefinitions>
+                
+                <Label Grid.Row="0" Grid.Column="0" Text="Enter a Url:" />
+                <Entry Grid.Row="0" Grid.Column="1" x:Name="tbUrl" Text="https://www.openelevationmap.org/" />
+                <Label Grid.Row="1" Grid.Column="0" Text="Enter a username:" />
+                <Entry Grid.Row="1" Grid.Column="1" x:Name="tbUser" Text="" Placeholder="username" />
+
+                <Label Grid.Row="2" Grid.Column="0" Text="Enter a password:" />
+                <Entry Grid.Row="2" Grid.Column="1" x:Name="tbPWD" Text="" IsPassword="True" Placeholder="Password"/>
+                <StackLayout Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+                    <Switch x:Name="cbZipped" ></Switch><Label VerticalOptions="Center" Text="zipped" />
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                    <Switch x:Name="cbEncrypted"></Switch><Label VerticalOptions="Center" Text="encrypted" />
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
+                    <Switch x:Name="cbAddHeaders"></Switch>
+                    <Label VerticalOptions="Center" Text="add headers" />
+                </StackLayout>
+            </Grid>
+
             <Button x:Name="tbGet" Text="Get" Clicked="tbGet_Clicked"/>
             <Button x:Name="tbDelete" Text="Delete" Clicked="tbDelete_Clicked" />
+            <Button x:Name="tbList" Text="List" Clicked="tbList_Clicked" />
             <Editor x:Name="tbInfo" Text="..." HeightRequest = "300">
                 
             </Editor>

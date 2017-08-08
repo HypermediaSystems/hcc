@@ -168,7 +168,6 @@ namespace HMS.Net.Http
         }
         public hccHttpHeaders GetHeaders(string url)
         {
-            hccHttpHeaders httpHeaders = new hccHttpHeaders();
             url = this.clearUrl(url);
 
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
@@ -180,21 +179,41 @@ namespace HMS.Net.Http
                 {
                     byte[] headerData = sqlEntry.header;
                     headerData = gzip.Decompress(headerData, 0, headerData.Length);
-                    string headerString = Encoding.UTF8.GetString(headerData, 0, headerData.Length);
-                    string[] lines = headerString.Split(new string[]{ Environment.NewLine, @"\r", @"\n"},StringSplitOptions.RemoveEmptyEntries);
-                    foreach(var l in lines)
-                    {
-                        int pos = l.IndexOf(": ");
-                        string key = l.Substring(0, pos);
-                        string value = l.Substring(pos +2);
-                        string[] values = value.Split(';');
-                        httpHeaders.items.Add(key, values);
-                    }
-
-                    return httpHeaders;
+                    string headerString = Encoding.UTF8.GetString(headerData, 0, headerData.Length);                    
+                    return GetHeadersFromString(headerString);
                 }
             }
             return null;
+
+        }
+        public hccHttpHeaders GetHeadersFromString(string headerString)
+        {
+            hccHttpHeaders httpHeaders = new hccHttpHeaders();
+            string[] lines = headerString.Split(new string[] { Environment.NewLine, @"\r", @"\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var l in lines)
+            {
+                int pos = l.IndexOf(": ");
+                string key = l.Substring(0, pos);
+                string value = l.Substring(pos + 2);
+                string[] values = value.Split(';');
+                httpHeaders.items.Add(key, values);
+            }
+
+            return httpHeaders;
+        }
+        public string[] GetIDs(string pattern,int SqlLimit)
+        {
+            List<string> ret = new List<string>();
+            string SQL = "SELECT url from " + typeof(SqLiteCacheItem).Name + " where url LIKE '%" + pattern + "%'";
+            SQL += " ORDER BY LastRead DESC ";
+            SQL += " LIMIT " + SqlLimit.ToString();
+            var entries = sqlite3.Query<SqLiteCacheItem>(SQL,new string[] { });
+            foreach (var entry in entries)
+            {
+                ret.Add(entry.url);
+            }
+
+            return ret.ToArray();
         }
         public void SetString(string url, string data,string headers="", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
@@ -214,15 +233,13 @@ namespace HMS.Net.Http
             SqLiteCacheItem ci = new SqLiteCacheItem();
             ci.url = url;
             ci.data = data;
-            if (encrypted == 1)
-            {
-                // ci.data = ci.data;
-            }
+            ci.encrypted = encrypted;
+
             if (zipped == 1)
             {
                 ci.data = gzip.Compress(ci.data, 0, ci.data.Length);
-                ci.zipped = zipped;
             }
+            ci.zipped = zipped;
             ci.size = ci.data.Length;
             if( !string.IsNullOrEmpty(headers) )
             {
@@ -253,6 +270,14 @@ namespace HMS.Net.Http
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
 
             return entry.Count() > 0;
+        }
+    }
+    class SqLiteScalar
+    {
+        public object value;
+        public string asString()
+        {
+            return value.ToString();
         }
     }
 }

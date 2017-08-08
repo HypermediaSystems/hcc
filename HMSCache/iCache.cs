@@ -11,6 +11,10 @@ namespace HMS.Net.Http
         Byte[] GetData(string id);
         iDataItem GetInfo(string id);
         hccHttpHeaders GetHeaders(string id);
+        hccHttpHeaders GetHeadersFromString(string headerString);
+
+        string[] GetIDs(string pattern,int SqlLimit);
+
         void SetString(string id, string data, string headers="", Boolean overwrite=true, byte zipped = 1, byte encrypted = 0);
         void SetData(string id, Byte[] data, string headers="", Boolean overwrite=true, byte zipped = 1, byte encrypted = 0);
         void Delete(string id);

@@ -31,14 +31,68 @@ namespace hcc
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             try
             {
-                hc.authenticationHeaderValue = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic",
+                string user = tbUser.Text.Trim();
+                string pwd = tbPWD.Text.Trim();
+
+                if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(user))
+                {
+                    hc.authenticationHeaderValue = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic",
                     Convert.ToBase64String(
                         System.Text.UTF8Encoding.UTF8.GetBytes(
-                            string.Format("{0}:{1}", "helmut.theis@hypermediasystems.de", "mds"))));
+                            string.Format("{0}:{1}", user, pwd))));
+                }
+                else
+                {
+                    hc.authenticationHeaderValue = null;
+                }
+                if (cbEncrypted.IsToggled == true)
+                {
+                    hc.encryptFunction = (urlRequested, data) =>
+                    {
+                        Array.Reverse(data);
+                        return data;
+                    };
+                    hc.decryptFunction = (urlRequested, data) =>
+                    {
+                        Array.Reverse(data);
+                        return data;
+                    };
+                }
+                else
+                {
+                    hc.encryptFunction = null;
+                    hc.decryptFunction = null;
+                }
 
+                // if we have to set additional headers we can that by setting beforeGetAsyncFunction
+                hc.beforeGetAsyncFunction = (urlRequested, httpCachedClient) => {
+                    httpCachedClient.DefaultRequestHeaders.Add("X-Clacks-Overhead", "GNU Terry Pratchett");
+                    return 0;
+                };
+
+                if (cbZipped.IsToggled == true)
+                { 
+                    hc.zipped = 1;                
+                }
+                else
+                {
+                    hc.zipped = 0;
+                }
+
+                if (cbAddHeaders.IsToggled == true)
+                {
+                    hc.addHeaders= true;
+                    hc.includeHeaders = new string[] { };                    
+                }
+                else
+                {
+                    hc.addHeaders = false;
+                    hc.includeHeaders = null;
+                }
                 await hc.GetCachedString(url, (json,hi) =>
                 {
-                    tbInfo.Text =  "fromDB:   " + hi.fromDb.ToString() + Environment.NewLine;
+                    tbInfo.Text =  "responseStatus: " + hi.responseStatus.ToString() + Environment.NewLine;
+                    tbInfo.Text += "fromDB:   " + hi.fromDb.ToString() + Environment.NewLine;
                     tbInfo.Text += "zipped:   " + hi.zipped.ToString() + Environment.NewLine;
                     tbInfo.Text += "encrypted:" + hi.encrypted.ToString() + Environment.NewLine;
                     tbInfo.Text += "size:     " + hi.size.ToString() + Environment.NewLine;
@@ -49,7 +103,7 @@ namespace hcc
                         tbInfo.Text += "Header-Info:" + Environment.NewLine;
                         foreach (var h in hi.hhh.items)
                         {
-                            tbInfo.Text += "    " + h.Key + ":" + h.Value[0] + Environment.NewLine;
+                            tbInfo.Text += "    " + h.Key + ": " + h.Value[0] + Environment.NewLine;
 
                         }
                     }
@@ -78,6 +132,15 @@ namespace hcc
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             hc.DeleteCachedData(url);
             
+        }
+
+        private void tbList_Clicked(object sender, EventArgs e)
+        {
+            HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+            string[] ids = hc.GetCachedUrls("");
+
+            tbInfo.Text = string.Join(Environment.NewLine, ids);
+
         }
     }
 }

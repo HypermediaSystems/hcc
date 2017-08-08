@@ -21,15 +21,15 @@ namespace HMS.Net.Http
         public static string dbName = "hcc";
 
         /// <summary>
-        /// include additonal information in the hccInfo object<para/>
+        /// Include additonal information in the hccInfo object<para/>
         /// Default is true.
         /// </summary>
-        public static Boolean addInfo = true;
+        public Boolean addInfo = true;
         /// <summary>
-        /// include headers in the hccInfo object<para/>
+        /// Include headers in the hccInfo object<para/>
         /// Default is true.
         /// </summary>
-        public static Boolean addHeaders = true;
+        public Boolean addHeaders = true;
         /// <summary>
         /// <para>list of headers to include in the hccInfo object</para>
         /// <para>null, add no headers,</para>
@@ -38,14 +38,66 @@ namespace HMS.Net.Http
         /// </summary>
         public string[] includeHeaders = null;
         /// <summary>
-        /// If true, GetCachedString and GetCachedStream do not btry to fetch missing data.<para/>
+        /// If true, GetCachedString and GetCachedStream do not try to fetch missing data.<para/>
         /// Default is false.
         /// </summary>
         public Boolean offline = false;
         /// <summary>
-        /// this optional AuthenticationHeaderValue will be assigned to HttpClient.DefaultRequestHeaders.Authorization
+        /// This optional AuthenticationHeaderValue will be assigned to HttpClient.DefaultRequestHeaders.Authorization
         /// </summary>
         public AuthenticationHeaderValue authenticationHeaderValue = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="urlRequested"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public delegate Byte[] encryptHandler(string urlRequested, Byte[] data);
+        public delegate Byte[] decryptHandler(string urlRequested, Byte[] data);
+        /// <summary>
+        /// This function is called when decryption is required.
+        /// </summary>
+        /// <param name="urlRequested"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public encryptHandler encryptFunction;
+        /// <summary>
+        /// This function is called when decryption is required.
+        /// </summary>
+        /// <param name="urlRequested"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public decryptHandler decryptFunction;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="urlRequested"></param>
+        /// <param name="ttpCachedClient"></param>
+        /// <returns></returns>
+        public delegate int beforeGetAsyncHandler(string urlRequested, HttpCachedClient httpCachedClient);
+
+        /// <summary>
+        /// This function is called before the GetAsync() call.<para/>
+        /// You can set additonal headers here.
+        /// </summary>
+        /// <param name="urlRequested"></param>
+        /// <param name="httpCachedClient"></param>
+        /// <returns></returns>
+        public beforeGetAsyncHandler beforeGetAsyncFunction;
+        /// <summary>
+        /// The data can be zipped before storing it in the cache.<para/>
+        /// 0 = dont zip,
+        /// 1 = use gzip (build-in)
+        /// </summary>
+        public Byte zipped = 1;
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int SqlLimit = 100;
 
         private iDataProvider cache;
         /// <summary>
@@ -59,7 +111,7 @@ namespace HMS.Net.Http
         }
         /// <summary>
         /// Get the stream for the given url from the cache.<para/>
-        /// If there is no entry found in the cache, the url is requested with GetAsync().<para/>
+        /// If there is no entry found in the cache (and this.offline is true), the url is requested with GetAsync().
         /// This can only be successful for absolute urls.
         /// </summary>
         /// <param name="url"></param>
@@ -74,7 +126,7 @@ namespace HMS.Net.Http
             if (data != null)
             {
                 hi.fromDb = true;
-                if (HttpCachedClient.addInfo == true)
+                if (this.addInfo == true)
                 {
                     iDataItem item = this.cache.GetInfo(url);
                     if (item != null)
@@ -83,16 +135,26 @@ namespace HMS.Net.Http
                         hi.set(item);
                     }
                 }
-                if (HttpCachedClient.addHeaders == true)
+                if (this.addHeaders == true)
                 {
                     hi.hhh = this.cache.GetHeaders(url);
                 }
+
+                if (this.decryptFunction != null &&hi.encrypted == 1)
+                {
+                    data = this.decryptFunction(url,data);
+                }
+                hi.size = data.Length;
                 Stream streamToReadFrom = new MemoryStream(data);
                 callback(streamToReadFrom,hi);
                 return 1;
             }
             if (this.authenticationHeaderValue != null)
                 this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
+
+            if (this.beforeGetAsyncFunction != null)
+                this.beforeGetAsyncFunction(url,this);
+
             using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
             {
                 string headerString = this.getCachedHeader(response.Headers);
@@ -101,13 +163,51 @@ namespace HMS.Net.Http
 
                 Stream strm = new MemoryStream();
                 streamToReadFrom.CopyTo(strm);
-                this.cache.SetData(url, ((MemoryStream)strm).ToArray(),headers: headerString,zipped:1);
-               
-                strm.Seek(0, SeekOrigin.Begin);
+                hi.responseStatus = response.StatusCode;
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    data = ((MemoryStream)strm).ToArray();
+                    if (this.encryptFunction != null)
+                    {
+                        data = this.encryptFunction(url, data);
+                        
+                        this.cache.SetData(url, data, headers: headerString, zipped: this.zipped, encrypted: 1);
+                    }
+                    else
+                    {
+                        this.cache.SetData(url, data, headers: headerString, zipped: this.zipped);
+                    }
+                    strm.Seek(0, SeekOrigin.Begin);
+                }
+                else
+                {
+                    strm = null;                    
+                }
 
+                if (this.addHeaders == true)
+                {
+                    hi.hhh = this.cache.GetHeadersFromString(headerString);
+                }
                 callback(strm,hi);
                 return 0;
             }
+        }
+        /// <summary>
+        /// Get the string for the given url from the cache.<para/>
+        /// If there is no entry found in the cache (and this.offline is true), the url is requested with GetAsync().
+        /// This can only be successful for absolute urls.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="callback"></param>
+        /// <returns></returns>
+        public async Task<int> GetCachedString(string url, Action<string, hccInfo> callback)
+        {
+            await this.GetCachedStream(url, (strm, hi) => {
+                var bytes = ((MemoryStream)strm).ToArray();
+                string str = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                callback(str, hi);
+            });
+            return 0;
         }
         /// <summary>
         /// Get the string for the given url from the cache.<para/>
@@ -117,7 +217,7 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetCachedString(string url, Action<string, hccInfo> callback)
+        public async Task<int> GetCachedStringOld(string url, Action<string, hccInfo> callback)
         {
             hccInfo hi = new hccInfo();
 
@@ -127,7 +227,7 @@ namespace HMS.Net.Http
             {
                 hi.fromDb = true;
 
-                if (HttpCachedClient.addInfo == true)
+                if (this.addInfo == true)
                 {
                     iDataItem item = this.cache.GetInfo(url);
                     if (item != null)
@@ -136,9 +236,15 @@ namespace HMS.Net.Http
                         hi.set(item);
                     }
                 }
-                if (HttpCachedClient.addHeaders == true)
+                if (this.addHeaders == true)
                 {
                     hi.hhh = this.cache.GetHeaders(url);
+                }
+                if (this.decryptFunction != null && hi.encrypted == 1)
+                {
+                    Byte[] bytes = Encoding.UTF8.GetBytes(data);
+                    bytes = this.decryptFunction(url, bytes);
+                    data = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                 }
 
                 callback(data,hi);
@@ -158,15 +264,24 @@ namespace HMS.Net.Http
                 {
                     responseString = theStreamReader.ReadToEnd();
                 }
-
+                hi.responseStatus = response.StatusCode;
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
+                    if (this.encryptFunction != null)
+                    {
+                        Byte[] bytes = Encoding.UTF8.GetBytes(responseString);
+                        bytes = this.encryptFunction(url, bytes);
+                        this.cache.SetData(url, bytes, headers: headerString, zipped: this.zipped, encrypted:1);
+                    }
+                    else
+                    {
+                        this.cache.SetString(url, responseString, headers: headerString, zipped: this.zipped);
+                    }
                 }
                 else
                 {
                     responseString = "";
                 }
-                this.cache.SetString(url, responseString,headers:headerString, zipped:1);
 
                 callback(responseString,hi);
                 return 0;
@@ -218,6 +333,12 @@ namespace HMS.Net.Http
         {
             return this.cache.Count();
         }
+
+        public string[] GetCachedUrls(string pattern)
+        {
+            return this.cache.GetIDs(pattern,this.SqlLimit);
+        }
+
         /// <summary>
         /// Add the given string to the cache.<para/>
         /// The id may be any string, especially a relative url.
@@ -267,11 +388,14 @@ namespace HMS.Net.Http
         public Boolean dontRemove { get; set; }
         public hccHttpHeaders hhh { get; set; }
 
+
+        public System.Net.HttpStatusCode responseStatus { get; set; }
         public Boolean fromDb { get; set; }
         public hccInfo()
         {
             fromDb = false;
             withInfo = false;
+            responseStatus = HttpStatusCode.OK;
         }
         public void set(iDataItem src)
         {
