@@ -13,7 +13,7 @@ namespace hcc
         {
             InitializeComponent();
 
-            MainPage = new hcc.MainPage();
+            MainPage = new NavigationPage(new hcc.MainPage());
         }
 
         protected override void OnStart()

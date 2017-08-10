@@ -56,8 +56,11 @@ namespace HMS.Net.Http
         string server;
         SQLiteAsyncConnection sqlite3Async;
         SQLiteConnection sqlite3;
+
+        iSQL platformSQL;
         public SqLiteCache(iSQL SQL, string server)
         {
+            platformSQL = SQL;
             try
             {
                 this.server = server;
@@ -77,7 +80,14 @@ namespace HMS.Net.Http
 
             }
         }
-        
+        public string DBName()
+        {
+            return HttpCachedClient.dbName;
+        }
+        public string DBPath()
+        {
+            return platformSQL.GetDBName();
+        }
         public long Reduce(long maxSize = 0, long maxCount = 0)
         {
             if( maxSize > 0 )
@@ -132,6 +142,14 @@ namespace HMS.Net.Http
                 return null;
             return Encoding.UTF8.GetString(data, 0, data.Length);
             
+        }
+        public IEnumerable<SqLiteCacheItem> GetEntries(string urlPattern)
+        {
+            return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url.Contains(urlPattern));
+        }
+        public SqLiteCacheItem GetEntry(string url)
+        {
+            return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url).FirstOrDefault();
         }
         public Byte[] GetData(string url)
         {

@@ -379,6 +379,23 @@ namespace HMS.Net.Http
         {
             this.cache.DeleteAllData();
         }
+        #region DATABAINDING
+        public string DBName{ get { return this.cache.DBName(); } }
+        public string DBPath { get { return this.cache.DBPath(); } }
+        public string DBSize { get { return this.cache.Size().ToString(); } }
+        public string DBCount { get { return this.cache.Count().ToString(); } }
+
+
+        public IEnumerable<SqLiteCacheItem> DBEntries(string urlPattern)
+        {
+            return this.cache.GetEntries( urlPattern);
+        }
+        public SqLiteCacheItem DBEntry(string url)
+        {
+            return this.cache.GetEntry(url);
+        }
+
+        #endregion
     }
     public class hccHttpHeaders
     {

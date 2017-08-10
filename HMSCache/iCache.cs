@@ -9,6 +9,8 @@ namespace HMS.Net.Http
     {
         string GetString(string id);
         Byte[] GetData(string id);
+        IEnumerable<SqLiteCacheItem> GetEntries(string urlPattern);
+        SqLiteCacheItem GetEntry(string url);
         iDataItem GetInfo(string id);
         hccHttpHeaders GetHeaders(string id);
         hccHttpHeaders GetHeadersFromString(string headerString);
@@ -33,7 +35,9 @@ namespace HMS.Net.Http
         /// </summary>
         /// <returns></returns>
         long Size();
-        
+
+        string DBName();
+        string DBPath();
         /// <summary>
         /// reduce the size of the cache
         /// </summary>

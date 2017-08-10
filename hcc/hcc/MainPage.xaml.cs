@@ -186,6 +186,13 @@ namespace hcc
             });
         }
 
-        
+        private async void btnManager_Clicked(object sender, EventArgs e)
+        {
+            HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+            await Navigation.PushAsync(new hccManagerPage
+            {
+                BindingContext = hc
+            });
+        }
     }
 }
