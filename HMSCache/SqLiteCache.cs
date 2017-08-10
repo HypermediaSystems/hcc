@@ -63,7 +63,7 @@ namespace HMS.Net.Http
                 this.server = server;
                 // open/create the SQLite db            
                 sqlite3 = SQL.GetConnection();
-
+                
                 sqlite3.CreateTable<SqLiteCacheItem>();
                 sqlite3.CreateTable<SqLiteMetadata>();
                 if (sqlite3.Table<SqLiteMetadata>().Count() == 0)
@@ -92,9 +92,9 @@ namespace HMS.Net.Http
 
             // return 0;
         }
-        public void ClearData()
+        public void DeleteAllData()
         {
-            sqlite3.Execute("DELETE * FROM " + typeof(SqLiteCacheItem).Name);            
+            sqlite3.Execute("DELETE FROM " + typeof(SqLiteCacheItem).Name);            
         }
         public long Count()
         {

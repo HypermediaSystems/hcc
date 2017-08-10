@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>HttpCachedClient.HMS</id>
-    <version>1.0.6</version>
+    <version>1.0.9</version>
     <title>HttpCachedClient.HMS</title>
     <authors>Helmut Theis</authors>
     <owners></owners>

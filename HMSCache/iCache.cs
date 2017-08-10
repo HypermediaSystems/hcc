@@ -22,7 +22,7 @@ namespace HMS.Net.Http
         /// <summary>
         /// remove all entries from the cache
         /// </summary>
-        void ClearData();
+        void DeleteAllData();
         /// <summary>
         /// get the number of entries
         /// </summary>

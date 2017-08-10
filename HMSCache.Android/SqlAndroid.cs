@@ -43,7 +43,7 @@ namespace HMS.Net.Http.Android.SQLImplementation
 
         public SQLiteConnection GetConnection()
         {
-            return new SQLiteConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
+            return new SQLiteConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);//| SQLiteOpenFlags.FullMutex
         }
         public SQLiteAsyncConnection GetAsyncConnection()
         {

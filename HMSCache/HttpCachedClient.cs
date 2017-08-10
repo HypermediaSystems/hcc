@@ -372,6 +372,13 @@ namespace HMS.Net.Http
         {
             this.cache.Delete(id);
         }
+        /// <summary>
+        /// remove all entries from the cache
+        /// </summary>
+        public void DeleteAllCachedData()
+        {
+            this.cache.DeleteAllData();
+        }
     }
     public class hccHttpHeaders
     {

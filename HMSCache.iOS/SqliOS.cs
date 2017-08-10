@@ -46,11 +46,11 @@ namespace HMS.Net.Http.iOS.SQLImplementation
 
         public SQLiteConnection GetConnection()
         {
-            return new SQLiteConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
+            return new SQLiteConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.FullMutex); //  
         }
         public SQLiteAsyncConnection GetAsyncConnection()
         {
-            return new SQLiteAsyncConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
+            return new SQLiteAsyncConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create );
         }
     }
 

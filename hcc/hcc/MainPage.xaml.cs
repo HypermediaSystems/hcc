@@ -133,7 +133,11 @@ namespace hcc
             hc.DeleteCachedData(url);
             
         }
-
+        private void btnDeleteAll_Clicked(object sender, EventArgs e)
+        {
+            HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+            hc.DeleteAllCachedData();
+        }
         private void tbList_Clicked(object sender, EventArgs e)
         {
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
@@ -142,5 +146,46 @@ namespace hcc
             tbInfo.Text = string.Join(Environment.NewLine, ids);
 
         }
+        private void tbLoop_Clicked(object sender, EventArgs e)
+        {
+            int i1 = 0;
+            int i2 = 0;
+            Task.Run(async () =>
+            {
+                for (i1 = 0; i1 < 100; i1++)
+                {
+                    HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+                    string url = tbUrl.Text.Trim();
+                    await hc.GetCachedString(url, (json, hi) =>
+                    {
+                        System.Diagnostics.Debug.WriteLine("tbLoop_Clicked1 " + i1.ToString() + "  " + i2.ToString());
+                    });
+                    Task.Delay(100).Wait();
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString();
+                    });
+                }
+            });
+            Task.Run(async () =>
+            {
+                for (i2 = 0; i2 < 200; i2++)
+                {
+                    HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+                    string url = tbUrl.Text.Trim();
+                    await hc.GetCachedString(url, (json, hi) =>
+                    {
+                        System.Diagnostics.Debug.WriteLine("tbLoop_Clicked2 " + i1.ToString() + "  " + i2.ToString());
+                    });
+                    Task.Delay(50).Wait();
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString();
+                    });
+                }
+            });
+        }
+
+        
     }
 }

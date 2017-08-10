@@ -34,7 +34,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <Label Grid.Row="0" Grid.Column="0" Text="Enter a Url:" />
-                <Entry Grid.Row="0" Grid.Column="1" x:Name="tbUrl" Text="https://www.openelevationmap.org/" />
+                <Entry Grid.Row="0" Grid.Column="1" x:Name="tbUrl" Text="http://www.openelevationmap.org/javascripts/modernizr-2.6.2.js" />
                 <Label Grid.Row="1" Grid.Column="0" Text="Enter a username:" />
                 <Entry Grid.Row="1" Grid.Column="1" x:Name="tbUser" Text="" Placeholder="username" />
 
@@ -51,10 +51,28 @@
                     <Label VerticalOptions="Center" Text="add headers" />
                 </StackLayout>
             </Grid>
+            <Grid ColumnSpacing="10"
+                    RowSpacing="10"
+                    HorizontalOptions="FillAndExpand"
+                    VerticalOptions="Start">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <Button x:Name="tbGet" Text="Get" Clicked="tbGet_Clicked"/>
-            <Button x:Name="tbDelete" Text="Delete" Clicked="tbDelete_Clicked" />
-            <Button x:Name="tbList" Text="List" Clicked="tbList_Clicked" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Row="0" Grid.Column="0"  x:Name="btnGet" Text="Get" Clicked="tbGet_Clicked"/>
+                <Button Grid.Row="1" Grid.Column="0"  x:Name="btnDelete" Text="Delete" Clicked="tbDelete_Clicked" />
+                <Button Grid.Row="1" Grid.Column="1"  x:Name="btnDeleteAll" Text="DeleteAll" Clicked="btnDeleteAll_Clicked" />
+                <Button Grid.Row="2" Grid.Column="0"  x:Name="btnList" Text="List" Clicked="tbList_Clicked" />
+                <Button Grid.Row="2" Grid.Column="1"  x:Name="btnLoop" Text="Loop" Clicked="tbLoop_Clicked" />
+            </Grid>
             <Editor x:Name="tbInfo" Text="..." HeightRequest = "300">
                 
             </Editor>
