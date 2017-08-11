@@ -112,7 +112,16 @@ namespace HMS.Net.Http
         }
         public long Size()
         {
-            var qry =  sqlite3.ExecuteScalar<long>("Select Sum(Size) as SIZE from " + typeof(SqLiteCacheItem).Name);
+            long qry = 0;
+
+            try
+            {
+                qry = sqlite3.ExecuteScalar<long>("Select Sum(Size) as SIZE from " + typeof(SqLiteCacheItem).Name);
+            }
+            catch (Exception)
+            {
+                // this gets throws when there are no entries in the table                
+            }
 
             return qry;
         }

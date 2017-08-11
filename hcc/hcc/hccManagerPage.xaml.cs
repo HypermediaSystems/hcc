@@ -34,6 +34,10 @@ namespace hcc
 
         private void btnRefresh_Clicked(object sender, EventArgs e)
         {
+            refreshList();
+        }
+        private void refreshList()
+        {
             listView.ItemTapped -= ListView_ItemTapped;
             listView.ItemSelected -= listView_ItemSelected;
             bindingObj bo = new bindingObj();
@@ -44,6 +48,16 @@ namespace hcc
 
             listView.SelectedItem = ((IEnumerable<SqLiteCacheItem>)listView.ItemsSource).FirstOrDefault();
 
+        }
+        private void btnSelect_Clicked(object sender, EventArgs e)
+        {            
+            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient).DBEntry(((Button)sender).Text);
+        }
+        private void btnEntryDelete_Clicked(object sender, EventArgs e)
+        {
+            string url = hccTag.GetTag((Button)sender);
+            (BindingContext as HMS.Net.Http.HttpCachedClient).DeleteCachedData(url);
+            refreshList();
 
         }
     }
@@ -60,6 +74,20 @@ namespace hcc
             {
                 _SelectedItem = value;
             }
+        }
+    }
+    public class hccTag
+    {
+        public static readonly BindableProperty TagProperty = BindableProperty.Create("Tag", typeof(string), typeof(hccTag), null);
+
+        public static string GetTag(BindableObject bindable)
+        {
+            return (string)bindable.GetValue(TagProperty);
+        }
+
+        public static void SetTag(BindableObject bindable, string value)
+        {
+            bindable.SetValue(TagProperty, value);
         }
     }
 }
