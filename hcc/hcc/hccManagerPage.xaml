@@ -31,7 +31,11 @@
                 <Label Grid.Row="2" Grid.Column="1" Text="{Binding DBCount}" />
                 <Label Grid.Row="3" Grid.Column="0" Text="Size" />
                 <Label Grid.Row="3" Grid.Column="1" Text="{Binding DBSize}" />
-                
+
+                <Button Grid.Row="4" Grid.Column="0"  x:Name="btnDeleteAll" Text="DeleteAll" Clicked="btnDeleteAll_Clicked" />
+                <Button Grid.Row="4" Grid.Column="1"  x:Name="btnLoop" Text="Loop" Clicked="tbLoop_Clicked" />
+
+
             </Grid>
         </StackLayout>
     </ContentPage>
@@ -60,6 +64,27 @@
             <ListView x:Name="listView" Margin="20"  
                       SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                       HasUnevenRows="true" >
+                <ListView.Header>
+                    <StackLayout Margin="20,0,0,0" Orientation="Horizontal" HorizontalOptions="FillAndExpand" BackgroundColor="#cccccc">
+                        <Grid ColumnSpacing="10"
+                                    RowSpacing="10"
+                                    HorizontalOptions="FillAndExpand"
+                                    VerticalOptions="Start">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6*" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="2*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Row="0" Grid.Column="0" Text="url"  HorizontalOptions="StartAndExpand"/>
+                            <Label Grid.Row="0" Grid.Column="1" Text="size" VerticalTextAlignment="Center" HorizontalOptions="EndAndExpand" />
+                            <Label Grid.Row="0" Grid.Column="2" Text="zipped" VerticalTextAlignment="Center" HorizontalOptions="EndAndExpand" />
+                        </Grid>
+                    </StackLayout>
+                </ListView.Header>
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell >
@@ -107,6 +132,37 @@
 
 
             </Grid>
+
+        </StackLayout>
+    </ContentPage>
+
+    <ContentPage Title="Import" >
+        <StackLayout Margin="20" VerticalOptions="StartAndExpand">
+            <Grid ColumnSpacing="10"
+                    RowSpacing="10"
+                    HorizontalOptions="FillAndExpand"
+                    VerticalOptions="Start">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Text="Server" />
+                <Entry Grid.Row="0" Grid.Column="1" x:Name="tbImportServer" Text="http://localhost:3000/"  />
+                <Label Grid.Row="1" Grid.Column="0" Text="Site" />
+                <Entry Grid.Row="1" Grid.Column="1" x:Name="tbImportSite" Text="test"  />
+                <Button Grid.Row="2" Grid.Column="0"  x:Name="btnImport" Text="Import" Clicked="btnImport_Clicked"/>
+
+                <Label Grid.Row="3" Grid.Column="0" x:Name="lblImportStatus" Text="" />
+
+            </Grid>
+
+
+            
 
         </StackLayout>
     </ContentPage>

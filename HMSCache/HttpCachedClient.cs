@@ -149,48 +149,54 @@ namespace HMS.Net.Http
                 callback(streamToReadFrom,hi);
                 return 1;
             }
-            if (this.authenticationHeaderValue != null)
-                this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
-
-            if (this.beforeGetAsyncFunction != null)
-                this.beforeGetAsyncFunction(url,this);
-
-            using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
+            if (this.offline == false)
             {
-                string headerString = this.getCachedHeader(response.Headers);
+                if (this.authenticationHeaderValue != null)
+                    this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
 
-                Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+                if (this.beforeGetAsyncFunction != null)
+                    this.beforeGetAsyncFunction(url, this);
 
-                Stream strm = new MemoryStream();
-                streamToReadFrom.CopyTo(strm);
-                hi.responseStatus = response.StatusCode;
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
                 {
-                    data = ((MemoryStream)strm).ToArray();
-                    if (this.encryptFunction != null)
+                    string headerString = this.getCachedHeader(response.Headers);
+
+                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+
+                    Stream strm = new MemoryStream();
+                    streamToReadFrom.CopyTo(strm);
+                    hi.responseStatus = response.StatusCode;
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        data = this.encryptFunction(url, data);
-                        
-                        this.cache.SetData(url, data, headers: headerString, zipped: this.zipped, encrypted: 1);
+                        data = ((MemoryStream)strm).ToArray();
+                        if (this.encryptFunction != null)
+                        {
+                            data = this.encryptFunction(url, data);
+
+                            this.cache.SetData(url, data, headers: headerString, zipped: this.zipped, encrypted: 1);
+                        }
+                        else
+                        {
+                            this.cache.SetData(url, data, headers: headerString, zipped: this.zipped);
+                        }
+                        strm.Seek(0, SeekOrigin.Begin);
                     }
                     else
                     {
-                        this.cache.SetData(url, data, headers: headerString, zipped: this.zipped);
+                        strm = null;
                     }
-                    strm.Seek(0, SeekOrigin.Begin);
-                }
-                else
-                {
-                    strm = null;                    
-                }
 
-                if (this.addHeaders == true)
-                {
-                    hi.hhh = this.cache.GetHeadersFromString(headerString);
+                    if (this.addHeaders == true)
+                    {
+                        hi.hhh = this.cache.GetHeadersFromString(headerString);
+                    }
+                    callback(strm, hi);
+                    return 0;
                 }
-                callback(strm,hi);
-                return 0;
             }
+            hi.size = 0;
+            callback(null, hi);
+            return 0;
         }
         /// <summary>
         /// Get the string for the given url from the cache.<para/>
@@ -203,9 +209,16 @@ namespace HMS.Net.Http
         public async Task<int> GetCachedString(string url, Action<string, hccInfo> callback)
         {
             await this.GetCachedStream(url, (strm, hi) => {
-                var bytes = ((MemoryStream)strm).ToArray();
-                string str = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                callback(str, hi);
+                if (strm != null)
+                {
+                    var bytes = ((MemoryStream)strm).ToArray();
+                    string str = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                    callback(str, hi);
+                }
+                else
+                {
+                    callback(null, hi);
+                }
             });
             return 0;
         }
@@ -287,7 +300,7 @@ namespace HMS.Net.Http
                 return 0;
             }
         }
-        private string getCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
+        public string getCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
         {
             string headerString = "";
             foreach (var h in headers)
@@ -360,9 +373,9 @@ namespace HMS.Net.Http
         /// </summary>
         /// <param name="id"></param>
         /// <param name="data"></param>
-        public void AddCachedStream(string id, byte[] data)
+        public void AddCachedStream(string id, byte[] data,string headers= "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
-            this.cache.SetData(id, data, zipped: 1);
+            this.cache.SetData(id, data, headers: headers, overwrite: overwrite, zipped: zipped, encrypted: encrypted);
         }
         /// <summary>
         /// Delete the entry from the cache.

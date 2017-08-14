@@ -35,6 +35,7 @@
   <ItemGroup>
     <Compile Include="FoundationAttribute.cs" />
     <Compile Include="gzip.cs" />
+    <Compile Include="HccUtil.cs" />
     <Compile Include="iCache.cs" />
     <Compile Include="HttpCachedClient.cs" />
     <Compile Include="iSQL.cs" />

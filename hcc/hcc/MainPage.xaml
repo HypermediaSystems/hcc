@@ -40,13 +40,31 @@
 
                 <Label Grid.Row="2" Grid.Column="0" Text="Enter a password:" />
                 <Entry Grid.Row="2" Grid.Column="1" x:Name="tbPWD" Text="" IsPassword="True" Placeholder="Password"/>
-                <StackLayout Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+            </Grid>
+            <Grid ColumnSpacing="10"
+                    RowSpacing="10"
+                    HorizontalOptions="FillAndExpand"
+                    VerticalOptions="Start">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+                <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
                     <Switch x:Name="cbZipped" ></Switch><Label VerticalOptions="Center" Text="zipped" />
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
                     <Switch x:Name="cbEncrypted"></Switch><Label VerticalOptions="Center" Text="encrypted" />
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
+                <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.Column="2">
                     <Switch x:Name="cbAddHeaders"></Switch>
                     <Label VerticalOptions="Center" Text="add headers" />
                 </StackLayout>
@@ -68,11 +86,9 @@
                     <ColumnDefinition Width="5*" />
                 </Grid.ColumnDefinitions>
                 <Button Grid.Row="0" Grid.Column="0"  x:Name="btnGet" Text="Get" Clicked="tbGet_Clicked"/>
+                <Button Grid.Row="0" Grid.Column="1"  x:Name="btnList" Text="List" Clicked="tbList_Clicked" />
                 <Button Grid.Row="1" Grid.Column="0"  x:Name="btnDelete" Text="Delete" Clicked="tbDelete_Clicked" />
-                <Button Grid.Row="1" Grid.Column="1"  x:Name="btnDeleteAll" Text="DeleteAll" Clicked="btnDeleteAll_Clicked" />
-                <Button Grid.Row="2" Grid.Column="0"  x:Name="btnList" Text="List" Clicked="tbList_Clicked" />
-                <Button Grid.Row="2" Grid.Column="1"  x:Name="btnLoop" Text="Loop" Clicked="tbLoop_Clicked" />
-                <Button Grid.Row="3" Grid.Column="0"  x:Name="btnManager" Text="Manager" Clicked="btnManager_Clicked" />
+                <Button Grid.Row="1" Grid.Column="1"  x:Name="btnManager" Text="Manager" Clicked="btnManager_Clicked" />
             </Grid>
             <Editor x:Name="tbInfo" Text="..." HeightRequest = "300">
                 

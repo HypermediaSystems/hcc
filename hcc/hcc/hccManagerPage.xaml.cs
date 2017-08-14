@@ -1,7 +1,9 @@
 ﻿using HMS.Net.Http;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -60,6 +62,191 @@ namespace hcc
             refreshList();
 
         }
+        private void btnDeleteAll_Clicked(object sender, EventArgs e)
+        {
+            var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
+            hcc.DeleteAllCachedData();
+        }
+        private void tbLoop_Clicked(object sender, EventArgs e)
+        {
+            var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
+
+            string debugUrl = "debugUrl";
+            hcc.AddCachedString(debugUrl, "DebugData");
+
+
+            int i1 = 0;
+            int i2 = 0;
+            Task.Run(async () =>
+            {
+                for (i1 = 0; i1 < 100; i1++)
+                {
+                    string url = tbUrl.Text.Trim();
+                    await hcc.GetCachedString(debugUrl, (json, hi) =>
+                    {
+                        System.Diagnostics.Debug.WriteLine("tbLoop_Clicked1 " + i1.ToString() + "  " + i2.ToString());
+                    });
+                    Task.Delay(100).Wait();
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString();
+                    });
+                }
+            });
+            Task.Run(async () =>
+            {
+                for (i2 = 0; i2 < 200; i2++)
+                {
+                    string url = tbUrl.Text.Trim();
+                    await hcc.GetCachedString(debugUrl, (json, hi) =>
+                    {
+                        System.Diagnostics.Debug.WriteLine("tbLoop_Clicked2 " + i1.ToString() + "  " + i2.ToString());
+                    });
+                    Task.Delay(50).Wait();
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString();
+                    });
+                }
+            });
+        }
+        private async void btnImport_Clicked(object sender, EventArgs e)
+        {
+            string server = tbImportServer.Text.Trim();
+            string site = tbImportSite.Text.Trim();
+
+            if (!server.EndsWith("/"))
+                server += "/";
+
+            import_status_set("getting list from " + server + " ... ");
+            // get the list
+            HttpClient httpClient = new HttpClient();
+
+            HccConfig.Rootobject hccConfig;
+            using (HttpResponseMessage response = await httpClient.GetAsync(server + "config/" + site, HttpCompletionOption.ResponseContentRead))
+            {
+                string json = await response.Content.ReadAsStringAsync();
+
+                hccConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<HccConfig.Rootobject>(json);
+            }
+            import_status_set("got list from " + server + " with " + hccConfig.files.Length.ToString() + " entries");
+
+            var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
+
+
+            for (int i = 0; i < hccConfig.files.Length; i++)
+            {
+                import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.files.Length.ToString());
+                using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry/" + site +"?url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead))
+                {
+                    string headerString = hcc.getCachedHeader(response.Headers);
+
+                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+
+                    Stream strm = new MemoryStream();
+                    streamToReadFrom.CopyTo(strm);
+                    
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        byte[] data = ((MemoryStream)strm).ToArray();
+                        // we have to remove the BOM, since we want to store only text
+                        int bomEnd = Bom.GetCursor(data);
+                        if( bomEnd > 0 )
+                        {
+                            Byte[] datax = new Byte[data.Length - bomEnd];
+                            Array.Copy(data, bomEnd, datax, 0, data.Length - bomEnd);
+                            data = datax;
+                        }
+
+                        string[] externalURLs = new string[] { "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" };
+                        if(hccConfig.files[i].replace == true )
+                        {
+                            string html = Encoding.UTF8.GetString(data,0,data.Length);
+                            foreach(var pat in externalURLs)
+                            {
+                                html = html.Replace(pat, "external/" + pat.Substring(7));
+                            }
+                            data = Encoding.UTF8.GetBytes(html);
+                        }
+
+                        if (hcc.encryptFunction != null)
+                        {
+                            data = hcc.encryptFunction(hccConfig.files[i].url, data);
+
+                            hcc.AddCachedStream(HccUtil.url_join(hccConfig.url,hccConfig.files[i].url), data, headers: headerString, zipped: hcc.zipped, encrypted: 1);
+                        }
+                        else
+                        {
+                            hcc.AddCachedStream(HccUtil.url_join(hccConfig.url, hccConfig.files[i].url), data, headers: headerString, zipped: 0); // hcc.zipped);
+                        }
+                    }
+                }
+            }
+            
+            import_status_set("got list of external from " + server + " with " + hccConfig.externalUrl.Length.ToString() + " entries");
+            for (int i = 0; i < hccConfig.externalUrl.Length; i++)
+            {
+                import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.externalUrl.Length.ToString());
+                using (HttpResponseMessage response = await httpClient.GetAsync(hccConfig.externalUrl[i].url, HttpCompletionOption.ResponseContentRead))
+                {
+                    string headerString = hcc.getCachedHeader(response.Headers);
+
+                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+
+                    Stream strm = new MemoryStream();
+                    streamToReadFrom.CopyTo(strm);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        byte[] data = ((MemoryStream)strm).ToArray();
+                        // we have to remove the BOM, since we want to store only text
+                        int bomEnd = Bom.GetCursor(data);
+                        if (bomEnd > 0)
+                        {
+                            Byte[] datax = new Byte[data.Length - bomEnd];
+                            Array.Copy(data, bomEnd, datax, 0, data.Length - bomEnd);
+                            data = datax;
+                        }
+                        Byte zipped = hcc.zipped;
+                        if( hccConfig.zipped != null)
+                        {
+                            zipped = Byte.Parse(hccConfig.zipped);
+                        }
+                        if (hccConfig.externalUrl[i].zipped != null)
+                        {
+                            zipped = Byte.Parse(hccConfig.externalUrl[i].zipped);
+                        }
+
+                        if (hcc.encryptFunction != null)
+                        {
+                            data = hcc.encryptFunction(hccConfig.externalUrl[i].url, data);
+
+                            hcc.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped, encrypted: 1);
+                        }
+                        else
+                        {
+                            hcc.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped); 
+                        }
+                    }
+                }
+            }
+        }
+        private void import_status_set(string status)
+        {
+            lblImportStatus.Text = status;
+        }
+        private void import_status_add(string status)
+        {
+            lblImportStatus.Text += Environment.NewLine + status;
+        }
+    }
+    class hccManagerNodeEntry
+    {
+        public string fname { get; set; }
+        public string url { get; set; }
+        public string aliasUrl { get; set; }
+        public Boolean needReplace { get; set; }
+        public Boolean canBeZipped { get; set; }
     }
     class bindingObj
     {
@@ -88,6 +275,36 @@ namespace hcc
         public static void SetTag(BindableObject bindable, string value)
         {
             bindable.SetValue(TagProperty, value);
+        }
+    }
+    public static class Bom
+    {
+        // got from https://stackoverflow.com/a/16315911
+        public static int GetCursor(Byte[] bytes)
+        {
+            // UTF-32, big-endian
+            if (IsMatch(bytes, new byte[] { 0x00, 0x00, 0xFE, 0xFF }))
+                return 4;
+            // UTF-32, little-endian
+            if (IsMatch(bytes, new byte[] { 0xFF, 0xFE, 0x00, 0x00 }))
+                return 4;
+            // UTF-16, big-endian
+            if (IsMatch(bytes, new byte[] { 0xFE, 0xFF }))
+                return 2;
+            // UTF-16, little-endian
+            if (IsMatch(bytes, new byte[] { 0xFF, 0xFE }))
+                return 2;
+            // UTF-8
+            if (IsMatch(bytes, new byte[] { 0xEF, 0xBB, 0xBF }))
+                return 3;
+            return 0;
+        }
+
+        private static bool IsMatch(Byte[] bytes, byte[] match)
+        {
+            var buffer = new byte[match.Length];
+            Array.Copy(bytes,0,buffer, 0, buffer.Length);
+            return !buffer.Where((t, i) => t != match[i]).Any();
         }
     }
 }
