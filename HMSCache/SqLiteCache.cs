@@ -45,10 +45,12 @@ namespace HMS.Net.Http
     public class SqLiteMetadata
     {
         [PrimaryKey]
-        public string version { get; set; }
+        public string id { get; set; }
+        public string data { get; set; }
+        public string test { get; set; }
         public SqLiteMetadata()
         {
-            this.version = "1.1";
+            
         }
     }
     public class SqLiteCache: iDataProvider
@@ -160,6 +162,10 @@ namespace HMS.Net.Http
         {
             return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url).FirstOrDefault();
         }
+        public string GetMetadata(string id)
+        {
+            return sqlite3.Table<SqLiteMetadata>().Where(i => i.id == id).FirstOrDefault().data;
+        }
         public Byte[] GetData(string url)
         {
             url = this.clearUrl(url);
@@ -241,6 +247,19 @@ namespace HMS.Net.Http
             }
 
             return ret.ToArray();
+        }
+        public void SetMetadata(string id, string data)
+        {
+            SqLiteMetadata md = new SqLiteMetadata();
+            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.id == id);
+
+            if( entry.Count() > 0 )
+            {
+                sqlite3.Delete<SqLiteMetadata>(id);
+            }
+            md.id = id;
+            md.data = data;
+            sqlite3.Insert(md);
         }
         public void SetString(string url, string data,string headers="", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {

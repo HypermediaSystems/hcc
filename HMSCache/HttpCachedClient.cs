@@ -109,6 +109,12 @@ namespace HMS.Net.Http
         {
             this.cache = cache;
         }
+        public void Upload(string url)
+        {
+        }
+        public void Download(string url)
+        {
+        }
         /// <summary>
         /// Get the stream for the given url from the cache.<para/>
         /// If there is no entry found in the cache (and this.offline is true), the url is requested with GetAsync().
@@ -377,6 +383,12 @@ namespace HMS.Net.Http
         {
             this.cache.SetData(id, data, headers: headers, overwrite: overwrite, zipped: zipped, encrypted: encrypted);
         }
+
+        public void AddCachedMetadata(string id, string data)
+        {
+            this.cache.SetMetadata(id, data);
+        }
+
         /// <summary>
         /// Delete the entry from the cache.
         /// </summary>

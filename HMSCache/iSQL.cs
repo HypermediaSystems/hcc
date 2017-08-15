@@ -1,6 +1,7 @@
 ﻿using SQLite;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,5 +15,8 @@ namespace HMS.Net.Http
         SQLiteAsyncConnection GetAsyncConnection();
 
         string GetDBName();
+
+
+        Byte[] GetBytes();
     }
 }

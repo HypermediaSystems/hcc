@@ -9,6 +9,7 @@ using HMS.Net.Http;
 
 using HMS.Net.Http.iOS.SQLImplementation;
 using Xamarin.Forms.Internals;
+using System.IO;
 
 [assembly: Xamarin.Forms.Dependency(typeof(SqliOS))]
 namespace HMS.Net.Http.iOS.SQLImplementation
@@ -28,6 +29,16 @@ namespace HMS.Net.Http.iOS.SQLImplementation
             SqlDBName = PortablePath.Combine(folder.Path, dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
+        }
+        public Byte[] GetBytes()
+        {
+            byte[] bytes = null;
+            using (FileStream file = new FileStream(SqlDBName, FileMode.Open, System.IO.FileAccess.Read))
+            {
+                bytes = new byte[file.Length];
+                file.Read(bytes, 0, (int)file.Length);
+            }
+            return bytes;
         }
         public Boolean Reset()
         {

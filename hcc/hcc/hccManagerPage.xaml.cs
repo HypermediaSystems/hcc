@@ -123,7 +123,7 @@ namespace hcc
             HttpClient httpClient = new HttpClient();
 
             HccConfig.Rootobject hccConfig;
-            using (HttpResponseMessage response = await httpClient.GetAsync(server + "config/" + site, HttpCompletionOption.ResponseContentRead))
+            using (HttpResponseMessage response = await httpClient.GetAsync(server + "config?site=" + site, HttpCompletionOption.ResponseContentRead))
             {
                 string json = await response.Content.ReadAsStringAsync();
 
@@ -133,11 +133,12 @@ namespace hcc
 
             var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
 
+            hcc.AddCachedMetadata("url", hccConfig.url);
 
             for (int i = 0; i < hccConfig.files.Length; i++)
             {
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.files.Length.ToString());
-                using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry/" + site +"?url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead))
+                using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry?site=" + site +"&url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead))
                 {
                     string headerString = hcc.getCachedHeader(response.Headers);
 
