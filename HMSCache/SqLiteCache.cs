@@ -56,12 +56,16 @@ namespace HMS.Net.Http
     public class SqLiteCache: iDataProvider
     {
         string server;
-        SQLiteAsyncConnection sqlite3Async;
-        SQLiteConnection sqlite3;
+        SQLiteAsyncConnection sqlite3Async = null;
+        SQLiteConnection sqlite3 = null;
 
         iSQL platformSQL;
-        public SqLiteCache(iSQL SQL, string server)
+
+
+        Boolean isReadonly = false;
+        public SqLiteCache(iSQL SQL, string server, Boolean isReadonly = false)
         {
+            this.isReadonly = isReadonly;
             platformSQL = SQL;
             try
             {
@@ -81,6 +85,31 @@ namespace HMS.Net.Http
             {
 
             }
+        }
+        private void Reopen()
+        {
+            sqlite3 = platformSQL.GetConnection();
+        }
+        private void Close()
+        {
+            if (sqlite3 != null)
+            {
+                sqlite3.Close();
+                sqlite3.Dispose();
+            }
+        }
+        public Byte[] GetBytes()
+        {
+            this.Close();
+            Byte[] bytes = this.platformSQL.GetBytes();
+            this.Reopen();
+            return bytes;
+        }
+        public void SetBytes(Byte[] bytes)
+        {
+            this.Close();
+            this.platformSQL.SetBytes(bytes);
+            this.Reopen();
         }
         public string DBName()
         {
@@ -186,10 +215,11 @@ namespace HMS.Net.Http
                     {
                         data = gzip.Decompress(data, 0, data.Length);
                     }
-
-                    // set the lastRead
-                    this.updateLastRead(sqlEntry.url);
-                    
+                    if (this.isReadonly == false)
+                    {
+                        // set the lastRead
+                        this.updateLastRead(sqlEntry.url);
+                    }
                     return data;
                 }
             }

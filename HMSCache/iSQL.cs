@@ -16,7 +16,7 @@ namespace HMS.Net.Http
 
         string GetDBName();
 
-
         Byte[] GetBytes();
+        void SetBytes(Byte[] bytes);
     }
 }

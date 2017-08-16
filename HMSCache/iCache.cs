@@ -46,6 +46,10 @@ namespace HMS.Net.Http
         /// <param name="maxCount"></param>
         /// <returns></returns>
         long Reduce(long maxSize=0, long maxCount=0);
+
+        Byte[] GetBytes();
+        void SetBytes(Byte[] bytes);
+
     }
     public interface iDataItem
     {        

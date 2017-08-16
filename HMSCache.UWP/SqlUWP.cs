@@ -42,6 +42,14 @@ namespace HMS.Net.Http.UWP.SQLImplementation
             }
             return bytes;
         }
+
+        public void SetBytes(Byte[] bytes)
+        {
+            using (FileStream file = new FileStream(SqlDBName, FileMode.Open, System.IO.FileAccess.Write))
+            {
+                file.Write(bytes, 0, (int)bytes.Length);
+            }
+        }
         public Boolean Reset()
         {
             Boolean ret = false;

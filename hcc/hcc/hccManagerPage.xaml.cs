@@ -62,17 +62,45 @@ namespace hcc
             refreshList();
 
         }
+
+        private void btnBackup_Clicked(object sender, EventArgs e)
+        {
+            var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
+
+            string serverUrl = tbServer.Text.Trim();
+
+            serverUrl = hcc.HccUtil.url_join(serverUrl, "upload");
+
+            lblServerStatus.Text = "Backuping to " + serverUrl + " ...";
+            hcClient.Backup(serverUrl);
+            lblServerStatus.Text = "Backuping to " + serverUrl + " done.";
+        }
+
+        private void btnRestore_Clicked(object sender, EventArgs e)
+        {
+            var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
+
+            string serverUrl = tbServer.Text.Trim();
+
+            serverUrl = hcc.HccUtil.url_join(serverUrl, "download?url=" + HttpCachedClient.dbName);
+
+            lblServerStatus.Text = "Restoring from " + serverUrl + " ...";
+
+            hcClient.Restore(serverUrl);
+            lblServerStatus.Text = "Restoring from " + serverUrl + " done.";
+
+        }
         private void btnDeleteAll_Clicked(object sender, EventArgs e)
         {
-            var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
-            hcc.DeleteAllCachedData();
+            var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
+            hcClient.DeleteAllCachedData();
         }
         private void tbLoop_Clicked(object sender, EventArgs e)
         {
-            var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
+            var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
 
             string debugUrl = "debugUrl";
-            hcc.AddCachedString(debugUrl, "DebugData");
+            hcClient.AddCachedString(debugUrl, "DebugData");
 
 
             int i1 = 0;
@@ -82,7 +110,7 @@ namespace hcc
                 for (i1 = 0; i1 < 100; i1++)
                 {
                     string url = tbUrl.Text.Trim();
-                    await hcc.GetCachedString(debugUrl, (json, hi) =>
+                    await hcClient.GetCachedString(debugUrl, (json, hi) =>
                     {
                         System.Diagnostics.Debug.WriteLine("tbLoop_Clicked1 " + i1.ToString() + "  " + i2.ToString());
                     });
@@ -98,7 +126,7 @@ namespace hcc
                 for (i2 = 0; i2 < 200; i2++)
                 {
                     string url = tbUrl.Text.Trim();
-                    await hcc.GetCachedString(debugUrl, (json, hi) =>
+                    await hcClient.GetCachedString(debugUrl, (json, hi) =>
                     {
                         System.Diagnostics.Debug.WriteLine("tbLoop_Clicked2 " + i1.ToString() + "  " + i2.ToString());
                     });
@@ -131,16 +159,16 @@ namespace hcc
             }
             import_status_set("got list from " + server + " with " + hccConfig.files.Length.ToString() + " entries");
 
-            var hcc = (BindingContext as HMS.Net.Http.HttpCachedClient);
+            var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
 
-            hcc.AddCachedMetadata("url", hccConfig.url);
+            hcClient.AddCachedMetadata("url", hccConfig.url);
 
             for (int i = 0; i < hccConfig.files.Length; i++)
             {
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.files.Length.ToString());
                 using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry?site=" + site +"&url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead))
                 {
-                    string headerString = hcc.getCachedHeader(response.Headers);
+                    string headerString = hcClient.getCachedHeader(response.Headers);
 
                     Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
 
@@ -170,15 +198,15 @@ namespace hcc
                             data = Encoding.UTF8.GetBytes(html);
                         }
 
-                        if (hcc.encryptFunction != null)
+                        if (hcClient.encryptFunction != null)
                         {
-                            data = hcc.encryptFunction(hccConfig.files[i].url, data);
+                            data = hcClient.encryptFunction(hccConfig.files[i].url, data);
 
-                            hcc.AddCachedStream(HccUtil.url_join(hccConfig.url,hccConfig.files[i].url), data, headers: headerString, zipped: hcc.zipped, encrypted: 1);
+                            hcClient.AddCachedStream(HccUtil.url_join(hccConfig.url,hccConfig.files[i].url), data, headers: headerString, zipped: hcClient.zipped, encrypted: 1);
                         }
                         else
                         {
-                            hcc.AddCachedStream(HccUtil.url_join(hccConfig.url, hccConfig.files[i].url), data, headers: headerString, zipped: 0); // hcc.zipped);
+                            hcClient.AddCachedStream(HccUtil.url_join(hccConfig.url, hccConfig.files[i].url), data, headers: headerString, zipped: 0); // hcc.zipped);
                         }
                     }
                 }
@@ -190,7 +218,7 @@ namespace hcc
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.externalUrl.Length.ToString());
                 using (HttpResponseMessage response = await httpClient.GetAsync(hccConfig.externalUrl[i].url, HttpCompletionOption.ResponseContentRead))
                 {
-                    string headerString = hcc.getCachedHeader(response.Headers);
+                    string headerString = hcClient.getCachedHeader(response.Headers);
 
                     Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
 
@@ -208,7 +236,7 @@ namespace hcc
                             Array.Copy(data, bomEnd, datax, 0, data.Length - bomEnd);
                             data = datax;
                         }
-                        Byte zipped = hcc.zipped;
+                        Byte zipped = hcClient.zipped;
                         if( hccConfig.zipped != null)
                         {
                             zipped = Byte.Parse(hccConfig.zipped);
@@ -218,15 +246,15 @@ namespace hcc
                             zipped = Byte.Parse(hccConfig.externalUrl[i].zipped);
                         }
 
-                        if (hcc.encryptFunction != null)
+                        if (hcClient.encryptFunction != null)
                         {
-                            data = hcc.encryptFunction(hccConfig.externalUrl[i].url, data);
+                            data = hcClient.encryptFunction(hccConfig.externalUrl[i].url, data);
 
-                            hcc.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped, encrypted: 1);
+                            hcClient.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped, encrypted: 1);
                         }
                         else
                         {
-                            hcc.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped); 
+                            hcClient.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped); 
                         }
                     }
                 }

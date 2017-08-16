@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -41,7 +42,8 @@ namespace HMS.Net.Http
         /// If true, GetCachedString and GetCachedStream do not try to fetch missing data.<para/>
         /// Default is false.
         /// </summary>
-        public Boolean offline = false;
+        public Boolean isOffline = false;
+        public Boolean isReadonly = false;
         /// <summary>
         /// This optional AuthenticationHeaderValue will be assigned to HttpClient.DefaultRequestHeaders.Authorization
         /// </summary>
@@ -109,11 +111,100 @@ namespace HMS.Net.Http
         {
             this.cache = cache;
         }
-        public void Upload(string url)
+        public async Task<Boolean> BackupAsync(string serverUrl, AuthenticationHeaderValue authentication = null)
         {
+            Byte[] bytes = this.cache.GetBytes();
+            using (var client = new HttpClient())
+            {
+                if (authentication != null)
+                    client.DefaultRequestHeaders.Authorization = authentication;
+
+                using (var content =
+                    new MultipartFormDataContent("Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture)))
+                {
+                    content.Add(new StreamContent(new MemoryStream(bytes)), "file", HttpCachedClient.dbName + ".sqlite");
+
+                    using (
+                       var message =
+                           await client.PostAsync(serverUrl, content))
+                    {
+                        var input = await message.Content.ReadAsStringAsync();
+
+                        return true;
+                    }
+                }
+            }
         }
-        public void Download(string url)
+        public async Task<Boolean> RestoreAsync(string serverUrl, AuthenticationHeaderValue authentication = null)
         {
+            using (var client = new HttpClient())
+            {
+                if (authentication != null)
+                    client.DefaultRequestHeaders.Authorization = authentication;
+
+                Byte[] bytes = await client.GetByteArrayAsync(serverUrl);
+
+                this.cache.SetBytes(bytes);
+            }
+            return true;
+
+        }
+        public Boolean Backup(string serverUrl) //, AuthenticationHeaderValue authentication )
+        {
+            Byte[] bytes = this.cache.GetBytes();
+            using (var client = new HttpClient())
+            {
+              //  if (authentication != null)
+              //      client.DefaultRequestHeaders.Authorization = authentication;
+
+                using (var content =
+                    new MultipartFormDataContent("Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture)))
+                {
+                    content.Add(new StreamContent(new MemoryStream(bytes)), "file", HttpCachedClient.dbName + ".sqlite");
+
+                    string resp = "";
+                    try
+                    {
+
+                        Task.Run(async () =>
+                        {
+                            using (var message = await client.PostAsync(serverUrl, content))
+                            {
+                                resp = await message.Content.ReadAsStringAsync();
+                            }
+                        }).Wait();
+                    }
+                    catch (Exception)
+                    {
+                        // throw;
+                    }
+                    return true;
+                }
+            }
+        }
+        public  Boolean Restore(string serverUrl) // , AuthenticationHeaderValue authentication )
+        {
+            using (var client = new HttpClient())
+            {
+              //  if (authentication != null)
+              //      client.DefaultRequestHeaders.Authorization = authentication;
+
+                Byte[] bytes = null;
+                try
+                {
+                    Task.Run(async () =>
+                    {
+                        bytes = await client.GetByteArrayAsync(serverUrl);
+                    }).Wait();
+                    this.cache.SetBytes(bytes);
+                }
+                catch (Exception)
+                {
+                    // throw;
+                }
+            }
+            return true;
+
         }
         /// <summary>
         /// Get the stream for the given url from the cache.<para/>
@@ -155,7 +246,7 @@ namespace HMS.Net.Http
                 callback(streamToReadFrom,hi);
                 return 1;
             }
-            if (this.offline == false)
+            if (this.isOffline == false)
             {
                 if (this.authenticationHeaderValue != null)
                     this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
@@ -174,16 +265,19 @@ namespace HMS.Net.Http
                     hi.responseStatus = response.StatusCode;
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        data = ((MemoryStream)strm).ToArray();
-                        if (this.encryptFunction != null)
+                        if (this.isReadonly == false)
                         {
-                            data = this.encryptFunction(url, data);
+                            data = ((MemoryStream)strm).ToArray();
+                            if (this.encryptFunction != null)
+                            {
+                                data = this.encryptFunction(url, data);
 
-                            this.cache.SetData(url, data, headers: headerString, zipped: this.zipped, encrypted: 1);
-                        }
-                        else
-                        {
-                            this.cache.SetData(url, data, headers: headerString, zipped: this.zipped);
+                                this.cache.SetData(url, data, headers: headerString, zipped: this.zipped, encrypted: 1);
+                            }
+                            else
+                            {
+                                this.cache.SetData(url, data, headers: headerString, zipped: this.zipped);
+                            }
                         }
                         strm.Seek(0, SeekOrigin.Begin);
                     }
