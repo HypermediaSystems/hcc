@@ -80,21 +80,25 @@ namespace HMS.Net.Http
                 this.server = server;
                 // open/create the SQLite db            
                 sqlite3 = SQL.GetConnection();
-                
-                sqlite3.CreateTable<SqLiteCacheItem>();
-                sqlite3.CreateTable<SqLiteMetadata>();
+
+                // ToDo: what about migrating the database?
                 sqlite3.CreateTable<SqLiteAlias>();
+                sqlite3.CreateTable<SqLiteMetadata>();
+                sqlite3.CreateTable<SqLiteCacheItem>();
 
-
-                if (sqlite3.Table<SqLiteMetadata>().Count() == 0)
+                var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.id == "hcc.version");
+                if( entry.Count() == 0)
                 {
-                    sqlite3.Insert(new SqLiteMetadata());
+                    SqLiteMetadata md = new SqLiteMetadata();
+                    md.id = "hcc.version";
+                    md.data = "1.2";
+                    sqlite3.Insert(md);
                 }
-
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                // ToDo log this error
+                string msg = ex.Message;
             }
         }
         private void Reopen()

@@ -154,11 +154,12 @@ namespace HMS.Net.Http
             Byte[] bytes = this.cache.GetBytes();
             using (var client = new HttpClient())
             {
-              //  if (authentication != null)
-              //      client.DefaultRequestHeaders.Authorization = authentication;
+                //  if (authentication != null)
+                //      client.DefaultRequestHeaders.Authorization = authentication;
 
-                using (var content =
-                    new MultipartFormDataContent("Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture)))
+                string boundary = "Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture);
+                boundary = boundary.Replace(" ", "-");
+                using (var content = new MultipartFormDataContent(boundary))
                 {
                     content.Add(new StreamContent(new MemoryStream(bytes)), "file", HttpCachedClient.dbName + ".sqlite");
 
@@ -174,9 +175,10 @@ namespace HMS.Net.Http
                             }
                         }).Wait();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // throw;
+                        // ToDo log this error
+                        string msg = ex.Message;
                     }
                     return true;
                 }

@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 using HMS.Net.Http;
 
 using HMS.Net.Http.iOS.SQLImplementation;
-using Xamarin.Forms.Internals;
+// using Xamarin.Forms.Internals;
 using System.IO;
 
-[assembly: Xamarin.Forms.Dependency(typeof(SqliOS))]
+// [assembly: Xamarin.Forms.Dependency(typeof(SqliOS))]
 namespace HMS.Net.Http.iOS.SQLImplementation
 {
-    [Preserve]
+   // [Preserve]
     public class SqliOS : iSQL
     {
         IFolder folder;

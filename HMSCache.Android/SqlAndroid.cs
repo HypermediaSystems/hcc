@@ -5,13 +5,13 @@ using System;
 using HMS.Net.Http;
 
 using HMS.Net.Http.Android.SQLImplementation;
-using Xamarin.Forms.Internals;
+// using Xamarin.Forms.Internals;
 using System.IO;
 
-[assembly: Xamarin.Forms.Dependency(typeof(SqlAndroid))]
+// [assembly: Xamarin.Forms.Dependency(typeof(SqlAndroid))]
 namespace HMS.Net.Http.Android.SQLImplementation
 {
-    [Preserve]
+   // [Preserve]
     public class SqlAndroid : iSQL
     {
         IFolder folder;
