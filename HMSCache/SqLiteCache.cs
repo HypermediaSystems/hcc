@@ -53,6 +53,14 @@ namespace HMS.Net.Http
             
         }
     }
+    public class SqLiteAlias
+    {
+        [PrimaryKey]
+        public string aliasUrl { get; set; }
+        public string url { get; set; }
+        
+    }
+
     public class SqLiteCache: iDataProvider
     {
         string server;
@@ -75,6 +83,9 @@ namespace HMS.Net.Http
                 
                 sqlite3.CreateTable<SqLiteCacheItem>();
                 sqlite3.CreateTable<SqLiteMetadata>();
+                sqlite3.CreateTable<SqLiteAlias>();
+
+
                 if (sqlite3.Table<SqLiteMetadata>().Count() == 0)
                 {
                     sqlite3.Insert(new SqLiteMetadata());
@@ -194,6 +205,32 @@ namespace HMS.Net.Http
         public string GetMetadata(string id)
         {
             return sqlite3.Table<SqLiteMetadata>().Where(i => i.id == id).FirstOrDefault().data;
+        }
+        public void SetAlias(string aliasUrl, string url)
+        {
+            SqLiteAlias alias = new SqLiteAlias();
+            alias.url = url;
+            alias.aliasUrl = aliasUrl;
+            var entry = sqlite3.Table<SqLiteAlias>().Where(i => i.aliasUrl == aliasUrl);
+
+            if (entry.Count() > 0)
+            {
+                sqlite3.Delete<SqLiteAlias>(aliasUrl);
+            }
+            sqlite3.Insert(alias);
+        }
+        public string GetUrlFromAlias(string aliasUrl)
+        {
+            string url = aliasUrl;
+            var entry = sqlite3.Table<SqLiteAlias>().Where(i => i.aliasUrl == aliasUrl).FirstOrDefault();
+
+            if (entry != null)
+            {
+                if (entry.url != null)
+                    url = entry.url;
+            }
+            return url;
+
         }
         public Byte[] GetData(string url)
         {

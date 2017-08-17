@@ -218,14 +218,22 @@ namespace HMS.Net.Http
         {
             hccInfo hi = new hccInfo();
 
+            string useUrl = this.cache.GetUrlFromAlias(url);
+
+            hi.url = url;
+            if (useUrl != url)
+            {
+                hi.aliasUrl = url;
+                hi.url = useUrl;
+            }
             // check if this is in the cache
-            byte[] data = this.cache.GetData(url);
+            byte[] data = this.cache.GetData(useUrl);
             if (data != null)
             {
                 hi.fromDb = true;
                 if (this.addInfo == true)
                 {
-                    iDataItem item = this.cache.GetInfo(url);
+                    iDataItem item = this.cache.GetInfo(useUrl);
                     if (item != null)
                     {
                         hi.withInfo = true;
@@ -234,12 +242,12 @@ namespace HMS.Net.Http
                 }
                 if (this.addHeaders == true)
                 {
-                    hi.hhh = this.cache.GetHeaders(url);
+                    hi.hhh = this.cache.GetHeaders(useUrl);
                 }
 
                 if (this.decryptFunction != null &&hi.encrypted == 1)
                 {
-                    data = this.decryptFunction(url,data);
+                    data = this.decryptFunction(useUrl, data);
                 }
                 hi.size = data.Length;
                 Stream streamToReadFrom = new MemoryStream(data);
@@ -252,9 +260,9 @@ namespace HMS.Net.Http
                     this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
 
                 if (this.beforeGetAsyncFunction != null)
-                    this.beforeGetAsyncFunction(url, this);
+                    this.beforeGetAsyncFunction(useUrl, this);
 
-                using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead))
+                using (HttpResponseMessage response = await this.GetAsync(useUrl, HttpCompletionOption.ResponseContentRead))
                 {
                     string headerString = this.getCachedHeader(response.Headers);
 
@@ -270,13 +278,13 @@ namespace HMS.Net.Http
                             data = ((MemoryStream)strm).ToArray();
                             if (this.encryptFunction != null)
                             {
-                                data = this.encryptFunction(url, data);
+                                data = this.encryptFunction(useUrl, data);
 
-                                this.cache.SetData(url, data, headers: headerString, zipped: this.zipped, encrypted: 1);
+                                this.cache.SetData(useUrl, data, headers: headerString, zipped: this.zipped, encrypted: 1);
                             }
                             else
                             {
-                                this.cache.SetData(url, data, headers: headerString, zipped: this.zipped);
+                                this.cache.SetData(useUrl, data, headers: headerString, zipped: this.zipped);
                             }
                         }
                         strm.Seek(0, SeekOrigin.Begin);
@@ -482,7 +490,10 @@ namespace HMS.Net.Http
         {
             this.cache.SetMetadata(id, data);
         }
-
+        public void AddCachedAliasUrl(string aliasUrl, string url)
+        {
+            this.cache.SetAlias(aliasUrl, url);
+        }
         /// <summary>
         /// Delete the entry from the cache.
         /// </summary>
@@ -539,11 +550,23 @@ namespace HMS.Net.Http
 
         public System.Net.HttpStatusCode responseStatus { get; set; }
         public Boolean fromDb { get; set; }
+
+        /// <summary>
+        /// This is the url used to lookup the data in the database
+        /// </summary>
+        public string url { get; set; }
+        /// <summary>
+        /// This is the requested url
+        /// </summary>
+        public string aliasUrl { get; set; }
+
         public hccInfo()
         {
             fromDb = false;
             withInfo = false;
             responseStatus = HttpStatusCode.OK;
+            url = null;
+            aliasUrl = null;
         }
         public void set(iDataItem src)
         {

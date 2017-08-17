@@ -86,8 +86,7 @@
     <Message Text="SUCCESS: Published package." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Release|AnyCPU|0' " Importance="High" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>echo copy $(ProjectDir)*.nupkg c:\nuget.local
-copy $(ProjectDir)*.nupkg c:\nuget.local
+    <PostBuildEvent>
 </PostBuildEvent>
   </PropertyGroup>
 </Project>

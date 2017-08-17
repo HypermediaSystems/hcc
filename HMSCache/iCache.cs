@@ -17,6 +17,8 @@ namespace HMS.Net.Http
 
         string[] GetIDs(string pattern,int SqlLimit);
         string GetMetadata(string id);
+        string GetUrlFromAlias(string aliasUrl);
+        void SetAlias(string aliasUrl, string url);
         void SetMetadata(string id, string data);
         void SetString(string id, string data, string headers="", Boolean overwrite=true, byte zipped = 1, byte encrypted = 0);
         void SetData(string id, Byte[] data, string headers="", Boolean overwrite=true, byte zipped = 1, byte encrypted = 0);

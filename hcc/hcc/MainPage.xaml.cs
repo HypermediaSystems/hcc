@@ -96,6 +96,9 @@ namespace hcc
                     tbInfo.Text += "zipped:   " + hi.zipped.ToString() + Environment.NewLine;
                     tbInfo.Text += "encrypted:" + hi.encrypted.ToString() + Environment.NewLine;
                     tbInfo.Text += "size:     " + hi.size.ToString() + Environment.NewLine;
+                    tbInfo.Text += "url:      " + hi.url + Environment.NewLine;
+                    if( !string.IsNullOrEmpty(hi.aliasUrl) )
+                        tbInfo.Text += "aliasUrl: " + hi.aliasUrl + Environment.NewLine;
 
                     tbInfo.Text += Environment.NewLine;
                     if (hi.hhh != null)
