@@ -45,9 +45,8 @@ namespace HMS.Net.Http
     public class SqLiteMetadata
     {
         [PrimaryKey]
-        public string id { get; set; }
-        public string data { get; set; }
-        public string test { get; set; }
+        public string tag { get; set; }
+        public string value { get; set; }
         public SqLiteMetadata()
         {
             
@@ -80,26 +79,37 @@ namespace HMS.Net.Http
                 this.server = server;
                 // open/create the SQLite db            
                 sqlite3 = SQL.GetConnection();
-
-                // ToDo: what about migrating the database?
-                sqlite3.CreateTable<SqLiteAlias>();
-                sqlite3.CreateTable<SqLiteMetadata>();
-                sqlite3.CreateTable<SqLiteCacheItem>();
-
-                var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.id == "hcc.version");
-                if( entry.Count() == 0)
-                {
-                    SqLiteMetadata md = new SqLiteMetadata();
-                    md.id = "hcc.version";
-                    md.data = "1.2";
-                    sqlite3.Insert(md);
-                }
+                this.Create();
+                
             }
             catch (Exception ex)
             {
                 // ToDo log this error
                 string msg = ex.Message;
             }
+        }
+        private void Create()
+        {
+            // ToDo: what about migrating the database?
+            sqlite3.CreateTable<SqLiteAlias>();
+            sqlite3.CreateTable<SqLiteMetadata>();
+            sqlite3.CreateTable<SqLiteCacheItem>();
+
+            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == "hcc.version");
+            if (entry.Count() == 0)
+            {
+                SqLiteMetadata md = new SqLiteMetadata();
+                md.tag = "hcc.version";
+                md.value = "1.2";
+                sqlite3.Insert(md);
+            }
+        }
+        public void Reset()
+        {
+            this.Close();
+            this.platformSQL.Reset();
+            this.Reopen();
+            this.Create();
         }
         private void Reopen()
         {
@@ -206,9 +216,16 @@ namespace HMS.Net.Http
         {
             return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url).FirstOrDefault();
         }
-        public string GetMetadata(string id)
+        public string GetMetadata(string tag)
         {
-            return sqlite3.Table<SqLiteMetadata>().Where(i => i.id == id).FirstOrDefault().data;
+            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == tag);
+
+            if (entry.Count() > 0)
+            {
+                return entry.First().value;
+            }
+
+            return null;
         }
         public void SetAlias(string aliasUrl, string url)
         {
@@ -319,17 +336,17 @@ namespace HMS.Net.Http
 
             return ret.ToArray();
         }
-        public void SetMetadata(string id, string data)
+        public void SetMetadata(string tag, string value)
         {
             SqLiteMetadata md = new SqLiteMetadata();
-            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.id == id);
+            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == tag);
 
             if( entry.Count() > 0 )
             {
-                sqlite3.Delete<SqLiteMetadata>(id);
+                sqlite3.Delete<SqLiteMetadata>(tag);
             }
-            md.id = id;
-            md.data = data;
+            md.tag = tag;
+            md.value = value;
             sqlite3.Insert(md);
         }
         public void SetString(string url, string data,string headers="", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)

@@ -52,6 +52,7 @@ namespace HMS.Net.Http
         Byte[] GetBytes();
         void SetBytes(Byte[] bytes);
 
+        void Reset();
     }
     public interface iDataItem
     {        

@@ -184,6 +184,12 @@ namespace HMS.Net.Http
                 }
             }
         }
+        public Boolean Reset()
+        {
+            this.cache.Reset();
+
+            return true;
+        }
         public  Boolean Restore(string serverUrl) // , AuthenticationHeaderValue authentication )
         {
             using (var client = new HttpClient())
