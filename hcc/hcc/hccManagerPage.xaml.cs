@@ -82,7 +82,7 @@ namespace hcc
 
             string serverUrl = tbServer.Text.Trim();
 
-            serverUrl = hcc.HccUtil.url_join(serverUrl, "download?url=" + HttpCachedClient.dbName);
+            serverUrl = hcc.HccUtil.url_join(serverUrl, "download?url=" + HttpCachedClient._dbName);
 
             lblServerStatus.Text = "Restoring from " + serverUrl + " ...";
 
@@ -110,7 +110,7 @@ namespace hcc
                 for (i1 = 0; i1 < 100; i1++)
                 {
                     string url = tbUrl.Text.Trim();
-                    await hcClient.GetCachedString(debugUrl, (json, hi) =>
+                    await hcClient.GetCachedStringAsync(debugUrl, (json, hi) =>
                     {
                         System.Diagnostics.Debug.WriteLine("tbLoop_Clicked1 " + i1.ToString() + "  " + i2.ToString());
                     });
@@ -126,7 +126,7 @@ namespace hcc
                 for (i2 = 0; i2 < 200; i2++)
                 {
                     string url = tbUrl.Text.Trim();
-                    await hcClient.GetCachedString(debugUrl, (json, hi) =>
+                    await hcClient.GetCachedStringAsync(debugUrl, (json, hi) =>
                     {
                         System.Diagnostics.Debug.WriteLine("tbLoop_Clicked2 " + i1.ToString() + "  " + i2.ToString());
                     });
@@ -168,7 +168,7 @@ namespace hcc
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.files.Length.ToString());
                 using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry?site=" + site +"&url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead))
                 {
-                    string headerString = hcClient.getCachedHeader(response.Headers);
+                    string headerString = hcClient.GetCachedHeader(response.Headers);
 
                     Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
 
@@ -218,7 +218,7 @@ namespace hcc
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.externalUrl.Length.ToString());
                 using (HttpResponseMessage response = await httpClient.GetAsync(hccConfig.externalUrl[i].url, HttpCompletionOption.ResponseContentRead))
                 {
-                    string headerString = hcClient.getCachedHeader(response.Headers);
+                    string headerString = hcClient.GetCachedHeader(response.Headers);
 
                     Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
 

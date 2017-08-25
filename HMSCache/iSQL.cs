@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 
 namespace HMS.Net.Http
 {
-    public interface iSQL
+
+    public interface ISql
+
     {
         Boolean Reset();
         SQLiteConnection GetConnection();

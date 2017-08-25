@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace HccConfig
 {
-
     public class Rootobject
     {
         public string url { get; set; }

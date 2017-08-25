@@ -8,14 +8,12 @@ using System.Threading.Tasks;
 
 namespace HMS
 {
-    public class gzip
+    public static class GZip
     {
-        private static int BUFFER_SIZE = 64 * 1024; //64kB
-
         public static byte[] Compress(byte[] inputData, int index, int count)
         {
             if (inputData == null)
-                throw new ArgumentNullException("inputData must be non-null");
+                throw new ArgumentNullException(nameof(inputData), "must be non-null");
 
             using (var compressIntoMs = new MemoryStream())
             {
@@ -30,7 +28,7 @@ namespace HMS
         public static byte[] Decompress(byte[] inputData, int index, int count)
         {
             if (inputData == null)
-                throw new ArgumentNullException("inputData must be non-null");
+                throw new ArgumentNullException(nameof(inputData), " must be non-null");
 
             using (var compressedMs = new MemoryStream(inputData, index, count))
             {
@@ -38,10 +36,7 @@ namespace HMS
                 {
                     using (var gzs = new BinaryReader(new GZipStream(compressedMs, CompressionMode.Decompress)))
                     {
-
-                        byte[] chunk;
-
-                        chunk = gzs.ReadBytes(1024);
+                        byte[] chunk = gzs.ReadBytes(1024);
                         while (chunk.Length > 0)
                         {
                             decompressedMs.Write(chunk, 0, chunk.Length);
@@ -52,6 +47,5 @@ namespace HMS
                 }
             }
         }
-
     }
 }

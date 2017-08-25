@@ -1,16 +1,15 @@
 ﻿using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace HMS.Net.Http
 {
-    public class SqLiteCacheItem : iDataItem
+    public class SqLiteCacheItem : IDataItem
     {
         [PrimaryKey]
         public string url { get; set; }
+
         public byte[] data { get; set; }
         public byte[] header { get; set; }
         public byte zipped { get; set; }
@@ -19,7 +18,7 @@ namespace HMS.Net.Http
         public DateTime lastRead { get; set; }
         public DateTime expire { get; set; }
         public long size { get; set; }
-        public Boolean dontRemove { get;set; }
+        public Boolean dontRemove { get; set; }
 
         public SqLiteCacheItem()
         {
@@ -29,6 +28,7 @@ namespace HMS.Net.Http
             this.lastRead = DateTime.Now;
             this.header = null;
         }
+
         public SqLiteCacheItem(SqLiteCacheItem src)
         {
             this.data = src.data;
@@ -39,55 +39,55 @@ namespace HMS.Net.Http
             this.lastWrite = src.lastWrite;
             this.size = src.size;
             this.zipped = src.zipped;
-
         }
     }
+
     public class SqLiteMetadata
     {
         [PrimaryKey]
         public string tag { get; set; }
+
         public string value { get; set; }
-        public SqLiteMetadata()
-        {
-            
-        }
     }
+
     public class SqLiteAlias
     {
         [PrimaryKey]
         public string aliasUrl { get; set; }
+
         public string url { get; set; }
-        
     }
 
-    public class SqLiteCache: iDataProvider
+    public class SqLiteCache : IDataProvider
     {
-        string server;
-        SQLiteAsyncConnection sqlite3Async = null;
-        SQLiteConnection sqlite3 = null;
+        private readonly string server;
 
-        iSQL platformSQL;
+        private SQLiteConnection sqlite3 ;
 
+        private readonly ISql platformSQL;
 
-        Boolean isReadonly = false;
-        public SqLiteCache(iSQL SQL, string server, Boolean isReadonly = false)
+        private readonly Boolean isReadonly ;
+
+        public string errMsg { get;  set; }
+
+        public SqLiteCache(ISql SQL, string server, Boolean isReadonly = false)
         {
             this.isReadonly = isReadonly;
-            platformSQL = SQL;
+            this.platformSQL = SQL;
             try
             {
                 this.server = server;
-                // open/create the SQLite db            
+                // open/create the SQLite db
                 sqlite3 = SQL.GetConnection();
                 this.Create();
-                
             }
             catch (Exception ex)
             {
                 // ToDo log this error
-                string msg = ex.Message;
+                this.errMsg = ex.Message;
             }
         }
+
         private void Create()
         {
             // ToDo: what about migrating the database?
@@ -104,6 +104,7 @@ namespace HMS.Net.Http
                 sqlite3.Insert(md);
             }
         }
+
         public void Reset()
         {
             this.Close();
@@ -111,10 +112,12 @@ namespace HMS.Net.Http
             this.Reopen();
             this.Create();
         }
+
         private void Reopen()
         {
             sqlite3 = platformSQL.GetConnection();
         }
+
         private void Close()
         {
             if (sqlite3 != null)
@@ -123,6 +126,7 @@ namespace HMS.Net.Http
                 sqlite3.Dispose();
             }
         }
+
         public Byte[] GetBytes()
         {
             this.Close();
@@ -130,42 +134,45 @@ namespace HMS.Net.Http
             this.Reopen();
             return bytes;
         }
+
         public void SetBytes(Byte[] bytes)
         {
             this.Close();
             this.platformSQL.SetBytes(bytes);
             this.Reopen();
         }
+
         public string DBName()
         {
-            return HttpCachedClient.dbName;
+            return HttpCachedClient._dbName;
         }
+
         public string DBPath()
         {
             return platformSQL.GetDBName();
         }
+
         public long Reduce(long maxSize = 0, long maxCount = 0)
         {
-            if( maxSize > 0 )
+            if (maxSize > 0)
             {
-
             }
-            else if(maxCount > 0)
+            else if (maxCount > 0)
             {
-
             }
             throw new Exception("not implemented");
-
-            // return 0;
         }
+
         public void DeleteAllData()
         {
-            sqlite3.Execute("DELETE FROM " + typeof(SqLiteCacheItem).Name);            
+            sqlite3.Execute("DELETE FROM " + typeof(SqLiteCacheItem).Name);
         }
+
         public long Count()
         {
             return sqlite3.Table<SqLiteCacheItem>().Count();
         }
+
         public long Size()
         {
             long qry = 0;
@@ -176,20 +183,23 @@ namespace HMS.Net.Http
             }
             catch (Exception)
             {
-                // this gets throws when there are no entries in the table                
+                // this gets throws when there are no entries in the table
+                qry = 0;
             }
 
             return qry;
         }
+
         private string clearUrl(string url)
         {
-            if (url.StartsWith(this.server))
+            if (url.StartsWith(this.server, StringComparison.CurrentCulture))
             {
                 return url.Substring(this.server.Length);
             }
             return url;
         }
-        public iDataItem GetInfo(string url)
+
+        public IDataItem GetInfo(string url)
         {
             SqLiteCacheItem retEntry = null;
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
@@ -200,22 +210,25 @@ namespace HMS.Net.Http
             }
             return retEntry;
         }
+
         public string GetString(string url)
         {
             byte[] data = GetData(url);
             if (data == null)
                 return null;
             return Encoding.UTF8.GetString(data, 0, data.Length);
-            
         }
+
         public IEnumerable<SqLiteCacheItem> GetEntries(string urlPattern)
         {
             return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url.Contains(urlPattern));
         }
+
         public SqLiteCacheItem GetEntry(string url)
         {
             return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url).FirstOrDefault();
         }
+
         public string GetMetadata(string tag)
         {
             var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == tag);
@@ -227,6 +240,7 @@ namespace HMS.Net.Http
 
             return null;
         }
+
         public void SetAlias(string aliasUrl, string url)
         {
             SqLiteAlias alias = new SqLiteAlias();
@@ -240,19 +254,19 @@ namespace HMS.Net.Http
             }
             sqlite3.Insert(alias);
         }
+
         public string GetUrlFromAlias(string aliasUrl)
         {
             string url = aliasUrl;
             var entry = sqlite3.Table<SqLiteAlias>().Where(i => i.aliasUrl == aliasUrl).FirstOrDefault();
 
-            if (entry != null)
+            if ( entry?.url != null)
             {
-                if (entry.url != null)
-                    url = entry.url;
+                url = entry.url;
             }
             return url;
-
         }
+
         public Byte[] GetData(string url)
         {
             url = this.clearUrl(url);
@@ -267,13 +281,13 @@ namespace HMS.Net.Http
                     byte[] data = sqlEntry.data;
                     if (sqlEntry.encrypted == 1)
                     {
-                        // data = sqlEntry.data;
+                        data = sqlEntry.data;
                     }
                     if (sqlEntry.zipped == 1)
                     {
-                        data = gzip.Decompress(data, 0, data.Length);
+                        data = GZip.Decompress(data, 0, data.Length);
                     }
-                    if (this.isReadonly == false)
+                    if ( !this.isReadonly )
                     {
                         // set the lastRead
                         this.updateLastRead(sqlEntry.url);
@@ -283,11 +297,13 @@ namespace HMS.Net.Http
             }
             return null;
         }
+
         private void updateLastRead(string url)
         {
-            sqlite3.Execute("Update " + typeof(SqLiteCacheItem).Name + " set lastRead = ? Where Url = ?",DateTime.Now,url);
+            sqlite3.Execute("Update " + typeof(SqLiteCacheItem).Name + " set lastRead = ? Where Url = ?", DateTime.Now, url);
         }
-        public hccHttpHeaders GetHeaders(string url)
+
+        public HccHttpHeaders GetHeaders(string url)
         {
             url = this.clearUrl(url);
 
@@ -299,21 +315,21 @@ namespace HMS.Net.Http
                 if (sqlEntry.header != null)
                 {
                     byte[] headerData = sqlEntry.header;
-                    headerData = gzip.Decompress(headerData, 0, headerData.Length);
-                    string headerString = Encoding.UTF8.GetString(headerData, 0, headerData.Length);                    
+                    headerData = GZip.Decompress(headerData, 0, headerData.Length);
+                    string headerString = Encoding.UTF8.GetString(headerData, 0, headerData.Length);
                     return GetHeadersFromString(headerString);
                 }
             }
             return null;
-
         }
-        public hccHttpHeaders GetHeadersFromString(string headerString)
+
+        public HccHttpHeaders GetHeadersFromString(string headerString)
         {
-            hccHttpHeaders httpHeaders = new hccHttpHeaders();
+            HccHttpHeaders httpHeaders = new HccHttpHeaders();
             string[] lines = headerString.Split(new string[] { Environment.NewLine, @"\r", @"\n" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var l in lines)
             {
-                int pos = l.IndexOf(": ");
+                int pos = l.IndexOf(": ",StringComparison.CurrentCulture);
                 string key = l.Substring(0, pos);
                 string value = l.Substring(pos + 2);
                 string[] values = value.Split(';');
@@ -322,13 +338,14 @@ namespace HMS.Net.Http
 
             return httpHeaders;
         }
-        public string[] GetIDs(string pattern,int SqlLimit)
+
+        public string[] GetIDs(string pattern, int SqlLimit)
         {
             List<string> ret = new List<string>();
             string SQL = "SELECT url from " + typeof(SqLiteCacheItem).Name + " where url LIKE '%" + pattern + "%'";
             SQL += " ORDER BY LastRead DESC ";
             SQL += " LIMIT " + SqlLimit.ToString();
-            var entries = sqlite3.Query<SqLiteCacheItem>(SQL,new string[] { });
+            var entries = sqlite3.Query<SqLiteCacheItem>(SQL, new string[] { });
             foreach (var entry in entries)
             {
                 ret.Add(entry.url);
@@ -336,12 +353,13 @@ namespace HMS.Net.Http
 
             return ret.ToArray();
         }
+
         public void SetMetadata(string tag, string value)
         {
             SqLiteMetadata md = new SqLiteMetadata();
             var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == tag);
 
-            if( entry.Count() > 0 )
+            if (entry.Count() > 0)
             {
                 sqlite3.Delete<SqLiteMetadata>(tag);
             }
@@ -349,18 +367,19 @@ namespace HMS.Net.Http
             md.value = value;
             sqlite3.Insert(md);
         }
-        public void SetString(string url, string data,string headers="", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
+
+        public void SetString(string url, string data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
-            SetData(url, Encoding.UTF8.GetBytes(data), headers,overwrite, zipped, encrypted);
+            SetData(url, Encoding.UTF8.GetBytes(data), headers, overwrite, zipped, encrypted);
         }
-        
-        public void SetData(string url, Byte[] data,string headers="", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
+
+        public void SetData(string url, Byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
             url = this.clearUrl(url);
 
             if (Exists(url))
             {
-                if (overwrite == false)
+                if ( !overwrite )
                     return;
                 Delete(url);
             }
@@ -371,32 +390,33 @@ namespace HMS.Net.Http
 
             if (zipped == 1)
             {
-                ci.data = gzip.Compress(ci.data, 0, ci.data.Length);
+                ci.data = GZip.Compress(ci.data, 0, ci.data.Length);
             }
             ci.zipped = zipped;
             ci.size = ci.data.Length;
-            if( !string.IsNullOrEmpty(headers) )
+            if (!string.IsNullOrEmpty(headers))
             {
                 byte[] headerData = Encoding.UTF8.GetBytes(headers);
-                ci.header = gzip.Compress(headerData, 0, headerData.Length);
+                ci.header = GZip.Compress(headerData, 0, headerData.Length);
                 ci.size += ci.header.Length;
             }
             try
             {
                 sqlite3.Insert(ci);
             }
-            catch (Exception ex)
+            catch (Exception )
             {
-                throw ex;
+                throw;
             }
-
         }
+
         public void Delete(string url)
         {
             url = this.clearUrl(url);
 
             sqlite3.Delete<SqLiteCacheItem>(url);
         }
+
         public Boolean Exists(string url)
         {
             url = this.clearUrl(url);
@@ -406,9 +426,11 @@ namespace HMS.Net.Http
             return entry.Count() > 0;
         }
     }
-    class SqLiteScalar
+
+    internal class SqLiteScalar
     {
         public object value;
+
         public string asString()
         {
             return value.ToString();

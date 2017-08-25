@@ -34,11 +34,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="FoundationAttribute.cs" />
-    <Compile Include="gzip.cs" />
+    <Compile Include="GZip.cs" />
     <Compile Include="HccUtil.cs" />
-    <Compile Include="iCache.cs" />
+    <Compile Include="ICache.cs" />
     <Compile Include="HttpCachedClient.cs" />
-    <Compile Include="iSQL.cs" />
+    <Compile Include="ISql.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqLiteCache.cs" />
   </ItemGroup>

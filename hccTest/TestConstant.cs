@@ -12,7 +12,7 @@ namespace hccTest
     /// </summary>
     public class TestConstant
     {
-        public static iSQL SQL;
+        public static ISql SQL;
         public static SqLiteCache sqLiteCache = null;
     }
 }

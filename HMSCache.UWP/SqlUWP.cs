@@ -1,37 +1,31 @@
 ﻿using PCLStorage;
 using SQLite;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using HMS.Net.Http;
-
-using HMS.Net.Http.UWP.SQLImplementation;
-// using Xamarin.Forms.Internals;
 using System.IO;
 
 // [assembly: Xamarin.Forms.Dependency(typeof(SqlUWP))]
 namespace HMS.Net.Http.UWP.SQLImplementation
 {
     [Foundation.Preserve(AllMembers = true)]
-    public class SqlUWP : iSQL
-    {
-        IFolder folder;
-        string SqlConnectionString;
-        string SqlDBName;
-       // [Preserve]
-        public SqlUWP()
-        {
-            string dbName = HttpCachedClient.dbName;
 
-            folder = FileSystem.Current.LocalStorage;
+    public class SqlUwp : ISql
+
+    {
+        private readonly string SqlConnectionString;
+        private readonly string SqlDBName;
+
+        // [Preserve]
+        public SqlUwp()
+        {
+            string dbName = HttpCachedClient._dbName;
+
+            IFolder folder = FileSystem.Current.LocalStorage;
 
             SqlDBName = PortablePath.Combine(folder.Path, dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
         }
-        
+
         public Byte[] GetBytes()
         {
             byte[] bytes = null;
@@ -50,6 +44,7 @@ namespace HMS.Net.Http.UWP.SQLImplementation
                 file.Write(bytes, 0, (int)bytes.Length);
             }
         }
+
         public Boolean Reset()
         {
             Boolean ret = false;
@@ -60,18 +55,20 @@ namespace HMS.Net.Http.UWP.SQLImplementation
             }
             return ret;
         }
+
         public string GetDBName()
         {
             return SqlDBName;
         }
+
         public SQLiteConnection GetConnection()
         {
             return new SQLiteConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
         }
+
         public SQLiteAsyncConnection GetAsyncConnection()
         {
             return new SQLiteAsyncConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
         }
     }
-
 }

@@ -63,7 +63,7 @@ namespace hccTestNUnit.UWP
             };
 
 
-            hccTest.TestConstant.SQL = new HMS.Net.Http.UWP.SQLImplementation.SqlUWP(); // Xamarin.Forms.DependencyService.Get<iSQL>();
+            hccTest.TestConstant.SQL = new HMS.Net.Http.UWP.SQLImplementation.SqlUwp(); // Xamarin.Forms.DependencyService.Get<iSQL>();
             hccTest.TestConstant.sqLiteCache = new SqLiteCache(hccTest.TestConstant.SQL, "");
 
             LoadApplication(nunit);

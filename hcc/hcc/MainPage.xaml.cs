@@ -11,15 +11,14 @@ namespace hcc
 {
     public partial class MainPage : ContentPage
     {
-        private iSQL SQL;
-        private SqLiteCache sqLiteCache = null;
+        private ISql SQL;
+        private SqLiteCache sqLiteCache;
 
         public MainPage()
         {
             InitializeComponent();
-            this.SQL = Xamarin.Forms.DependencyService.Get<iSQL>();
+            this.SQL = Xamarin.Forms.DependencyService.Get<ISql>();
             this.sqLiteCache = new SqLiteCache( SQL, "");
-
         }
 
         private async void tbGet_Clicked(object sender, EventArgs e)
@@ -34,7 +33,7 @@ namespace hcc
                 string user = tbUser.Text.Trim();
                 string pwd = tbPWD.Text.Trim();
 
-                if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(user))
+                if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pwd))
                 {
                     hc.authenticationHeaderValue = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic",
                     Convert.ToBase64String(
@@ -45,7 +44,7 @@ namespace hcc
                 {
                     hc.authenticationHeaderValue = null;
                 }
-                if (cbEncrypted.IsToggled == true)
+                if (cbEncrypted.IsToggled )
                 {
                     hc.encryptFunction = (urlRequested, data) =>
                     {
@@ -70,51 +69,52 @@ namespace hcc
                     return 0;
                 };
 
-                if (cbZipped.IsToggled == true)
-                { 
-                    hc.zipped = 1;                
+                if (cbZipped.IsToggled )
+                {
+                    hc.zipped = 1;
                 }
                 else
                 {
                     hc.zipped = 0;
                 }
 
-                if (cbAddHeaders.IsToggled == true)
+                if (cbAddHeaders.IsToggled )
                 {
                     hc.addHeaders= true;
-                    hc.includeHeaders = new string[] { };                    
+                    hc.includeHeaders = new string[] { };
                 }
                 else
                 {
                     hc.addHeaders = false;
                     hc.includeHeaders = null;
                 }
-                await hc.GetCachedString(url, (json,hi) =>
+                await hc.GetCachedStringAsync(url, (json, hi) =>
                 {
-                    tbInfo.Text =  "responseStatus: " + hi.responseStatus.ToString() + Environment.NewLine;
-                    tbInfo.Text += "fromDB:   " + hi.fromDb.ToString() + Environment.NewLine;
-                    tbInfo.Text += "zipped:   " + hi.zipped.ToString() + Environment.NewLine;
-                    tbInfo.Text += "encrypted:" + hi.encrypted.ToString() + Environment.NewLine;
-                    tbInfo.Text += "size:     " + hi.size.ToString() + Environment.NewLine;
-                    tbInfo.Text += "url:      " + hi.url + Environment.NewLine;
-                    if( !string.IsNullOrEmpty(hi.aliasUrl) )
-                        tbInfo.Text += "aliasUrl: " + hi.aliasUrl + Environment.NewLine;
+                    StringBuilder bld = new StringBuilder();
+                    bld.Append("responseStatus: ").Append(hi.responseStatus.ToString()).Append(Environment.NewLine);
+                    bld.Append("fromDB:   ").Append(hi.fromDb.ToString()).Append(Environment.NewLine);
+                    bld.Append("zipped:   ").Append(hi.zipped.ToString()).Append(Environment.NewLine);
+                    bld.Append("encrypted:").Append(hi.encrypted.ToString()).Append(Environment.NewLine);
+                    bld.Append("size:     ").Append(hi.size.ToString()).Append(Environment.NewLine);
+                    bld.Append("url:      ").Append(hi.url).Append(Environment.NewLine);
+                    if (!string.IsNullOrEmpty(hi.aliasUrl))
+                        bld.Append("aliasUrl: ").Append(hi.aliasUrl).Append(Environment.NewLine);
 
-                    tbInfo.Text += Environment.NewLine;
+                    bld.Append(Environment.NewLine);
                     if (hi.hhh != null)
                     {
-                        tbInfo.Text += "Header-Info:" + Environment.NewLine;
+                        bld.Append("Header-Info:").Append(Environment.NewLine);
                         foreach (var h in hi.hhh.items)
                         {
-                            tbInfo.Text += "    " + h.Key + ": " + h.Value[0] + Environment.NewLine;
-
+                            bld.Append("    ").Append(h.Key).Append(": ").Append(h.Value[0]).Append(Environment.NewLine);
                         }
                     }
-                    tbInfo.Text += "Cache-Info:" + Environment.NewLine;
-                    tbInfo.Text += "    Size: " + hc.GetCachedSize().ToString() +  Environment.NewLine;
-                    tbInfo.Text += "    Count:" + hc.GetCachedCount().ToString() + Environment.NewLine;
+                    bld.Append("Cache-Info:").Append(Environment.NewLine);
+                    bld.Append("    Size: ").Append(hc.GetCachedSize().ToString()).Append(Environment.NewLine);
+                    bld.Append("    Count:").Append(hc.GetCachedCount().ToString()).Append(Environment.NewLine);
+                    tbInfo.Text = bld.ToString();
                     tbContent.Text = json;
-                });
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -122,9 +122,7 @@ namespace hcc
                 if(ex.InnerException != null )
                     tbContent.Text += ex.InnerException.Message;
             }
-
         }
-
 
         private void tbDelete_Clicked(object sender, EventArgs e)
         {
@@ -134,18 +132,15 @@ namespace hcc
             tbContent.Text = url +  " deleted from cache.";
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             hc.DeleteCachedData(url);
-            
         }
-        
+
         private void tbList_Clicked(object sender, EventArgs e)
         {
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             string[] ids = hc.GetCachedUrls("");
 
             tbInfo.Text = string.Join(Environment.NewLine, ids);
-
         }
-
 
         private async void btnManager_Clicked(object sender, EventArgs e)
         {
@@ -153,7 +148,7 @@ namespace hcc
             await Navigation.PushAsync(new hccManagerPage
             {
                 BindingContext = hc
-            });
+            }).ConfigureAwait(false);
         }
     }
 }

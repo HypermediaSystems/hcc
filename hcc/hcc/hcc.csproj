@@ -39,8 +39,8 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="HccConfig.cs" />
-    <Compile Include="hccManagerPage.xaml.cs">
-      <DependentUpon>hccManagerPage.xaml</DependentUpon>
+    <Compile Include="HccManagerPage.xaml.cs">
+      <DependentUpon>HccManagerPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -92,7 +92,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="hccManagerPage.xaml">
+    <EmbeddedResource Include="HccManagerPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>

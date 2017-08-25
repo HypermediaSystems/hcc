@@ -107,7 +107,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SqlUWP.cs" />
+    <Compile Include="SqlUwp.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\HMSCache.UWP.rd.xml" />
   </ItemGroup>

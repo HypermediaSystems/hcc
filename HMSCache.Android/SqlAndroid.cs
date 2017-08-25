@@ -12,14 +12,14 @@ using System.IO;
 namespace HMS.Net.Http.Android.SQLImplementation
 {
    // [Preserve]
-    public class SqlAndroid : iSQL
+    public class SqlAndroid : ISql
     {
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
         public SqlAndroid()
         {
-            string dbName = HttpCachedClient.dbName;
+            string dbName = HttpCachedClient._dbName;
 
             folder = FileSystem.Current.LocalStorage;
 

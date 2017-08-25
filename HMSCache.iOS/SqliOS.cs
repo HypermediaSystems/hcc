@@ -15,14 +15,14 @@ using System.IO;
 namespace HMS.Net.Http.iOS.SQLImplementation
 {
    // [Preserve]
-    public class SqliOS : iSQL
+    public class SqliOS : ISql
     {
         IFolder folder;
         string SqlConnectionString;
         string SqlDBName;
         public SqliOS()
         {
-            string dbName = HttpCachedClient.dbName;
+            string dbName = HttpCachedClient._dbName;
 
             folder = FileSystem.Current.LocalStorage;
 
