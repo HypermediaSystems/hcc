@@ -7,13 +7,14 @@ using System.Text;
 namespace hccTest
 {
     [TestFixture]
-    public class Test1
+    public static class Test1
     {
         [Test, Order(1)]
         public static void TestStartup()
         {
             Assert.IsNotNull(TestConstant.sqLiteCache);
         }
+
         [Test]
         public static void TestDBname()
         {

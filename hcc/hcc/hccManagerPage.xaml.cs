@@ -13,54 +13,54 @@ using Xamarin.Forms.Xaml;
 namespace hcc
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
-    public partial class hccManagerPage : TabbedPage
+    public partial class HccManagerPage : TabbedPage
     {
-        public hccManagerPage()
+        public HccManagerPage()
         {
             InitializeComponent();
 
             listView.ItemSelected += listView_ItemSelected;
             listView.ItemTapped += ListView_ItemTapped;
-            
         }
 
         private void ListView_ItemTapped(object sender, ItemTappedEventArgs e)
         {
-            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient).DBEntry(((SqLiteCacheItem)e.Item).url);
+            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient)?.DBEntry(((SqLiteCacheItem)e.Item).url);
         }
 
         private void listView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
-            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient).DBEntry(((SqLiteCacheItem)e.SelectedItem).url);
+            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient)?.DBEntry(((SqLiteCacheItem)e.SelectedItem).url);
         }
 
         private void btnRefresh_Clicked(object sender, EventArgs e)
         {
             refreshList();
         }
+
         private void refreshList()
         {
             listView.ItemTapped -= ListView_ItemTapped;
             listView.ItemSelected -= listView_ItemSelected;
-            bindingObj bo = new bindingObj();
+            BindingObj bo = new BindingObj();
             listView.BindingContext = bo;
-            listView.ItemsSource = (BindingContext as HMS.Net.Http.HttpCachedClient).DBEntries(tbUrl.Text);
+            listView.ItemsSource = (BindingContext as HMS.Net.Http.HttpCachedClient)?.DBEntries(tbUrl.Text);
             listView.ItemSelected += listView_ItemSelected;
             listView.ItemTapped += ListView_ItemTapped;
 
             listView.SelectedItem = ((IEnumerable<SqLiteCacheItem>)listView.ItemsSource).FirstOrDefault();
+        }
 
-        }
         private void btnSelect_Clicked(object sender, EventArgs e)
-        {            
-            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient).DBEntry(((Button)sender).Text);
+        {
+            detailGrid.BindingContext = (BindingContext as HMS.Net.Http.HttpCachedClient)?.DBEntry(((Button)sender).Text);
         }
+
         private void btnEntryDelete_Clicked(object sender, EventArgs e)
         {
-            string url = hccTag.GetTag((Button)sender);
-            (BindingContext as HMS.Net.Http.HttpCachedClient).DeleteCachedData(url);
+            string url = HccTag.GetTag((Button)sender);
+            (BindingContext as HMS.Net.Http.HttpCachedClient)?.DeleteCachedData(url);
             refreshList();
-
         }
 
         private void btnBackup_Clicked(object sender, EventArgs e)
@@ -88,20 +88,20 @@ namespace hcc
 
             hcClient.Restore(serverUrl);
             lblServerStatus.Text = "Restoring from " + serverUrl + " done.";
-
         }
+
         private void btnDeleteAll_Clicked(object sender, EventArgs e)
         {
             var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
             hcClient.DeleteAllCachedData();
         }
+
         private void tbLoop_Clicked(object sender, EventArgs e)
         {
             var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
 
-            string debugUrl = "debugUrl";
+            const string debugUrl = "debugUrl";
             hcClient.AddCachedString(debugUrl, "DebugData");
-
 
             int i1 = 0;
             int i2 = 0;
@@ -109,41 +109,28 @@ namespace hcc
             {
                 for (i1 = 0; i1 < 100; i1++)
                 {
-                    string url = tbUrl.Text.Trim();
-                    await hcClient.GetCachedStringAsync(debugUrl, (json, hi) =>
-                    {
-                        System.Diagnostics.Debug.WriteLine("tbLoop_Clicked1 " + i1.ToString() + "  " + i2.ToString());
-                    });
+                    await hcClient.GetCachedStringAsync(debugUrl, (json, hi) => System.Diagnostics.Debug.WriteLine("tbLoop_Clicked1 " + i1.ToString() + "  " + i2.ToString())).ConfigureAwait(false);
                     Task.Delay(100).Wait();
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString();
-                    });
+                    Device.BeginInvokeOnMainThread(() => btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString());
                 }
             });
             Task.Run(async () =>
             {
                 for (i2 = 0; i2 < 200; i2++)
                 {
-                    string url = tbUrl.Text.Trim();
-                    await hcClient.GetCachedStringAsync(debugUrl, (json, hi) =>
-                    {
-                        System.Diagnostics.Debug.WriteLine("tbLoop_Clicked2 " + i1.ToString() + "  " + i2.ToString());
-                    });
+                    await hcClient.GetCachedStringAsync(debugUrl, (json, hi) => System.Diagnostics.Debug.WriteLine("tbLoop_Clicked2 " + i1.ToString() + "  " + i2.ToString())).ConfigureAwait(false);
                     Task.Delay(50).Wait();
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString();
-                    });
+                    Device.BeginInvokeOnMainThread(() => btnLoop.Text = "Loop " + i1.ToString() + "  " + i2.ToString());
                 }
             });
         }
-        private async void btnImport_Clicked(object sender, EventArgs e)
+
+        private async void btnImport_ClickedAsync(object sender, EventArgs e)
         {
             string server = tbImportServer.Text.Trim();
             string site = tbImportSite.Text.Trim();
 
-            if (!server.EndsWith("/"))
+            if (!server.EndsWith("/",StringComparison.CurrentCulture))
                 server += "/";
 
             import_status_set("getting list from " + server + " ... ");
@@ -151,9 +138,9 @@ namespace hcc
             HttpClient httpClient = new HttpClient();
 
             HccConfig.Rootobject hccConfig;
-            using (HttpResponseMessage response = await httpClient.GetAsync(server + "config?site=" + site, HttpCompletionOption.ResponseContentRead))
+            using (HttpResponseMessage response = await httpClient.GetAsync(server + "config?site=" + site, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false))
             {
-                string json = await response.Content.ReadAsStringAsync();
+                string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 hccConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<HccConfig.Rootobject>(json);
             }
@@ -166,15 +153,15 @@ namespace hcc
             for (int i = 0; i < hccConfig.files.Length; i++)
             {
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.files.Length.ToString());
-                using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry?site=" + site +"&url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead))
+                using (HttpResponseMessage response = await httpClient.GetAsync(server + "entry?site=" + site +"&url=" + hccConfig.files[i].url, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false))
                 {
                     string headerString = hcClient.GetCachedHeader(response.Headers);
 
-                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
                     Stream strm = new MemoryStream();
                     streamToReadFrom.CopyTo(strm);
-                    
+
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         byte[] data = ((MemoryStream)strm).ToArray();
@@ -187,8 +174,8 @@ namespace hcc
                             data = datax;
                         }
 
-                        string[] externalURLs = new string[] { "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" };
-                        if(hccConfig.files[i].replace == true )
+                        string[] externalURLs = { "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" };
+                        if(hccConfig.files[i].replace  )
                         {
                             string html = Encoding.UTF8.GetString(data,0,data.Length);
                             foreach(var pat in externalURLs)
@@ -202,25 +189,32 @@ namespace hcc
                         {
                             data = hcClient.encryptFunction(hccConfig.files[i].url, data);
 
-                            hcClient.AddCachedStream(HccUtil.url_join(hccConfig.url,hccConfig.files[i].url), data, headers: headerString, zipped: hcClient.zipped, encrypted: 1);
+                            hcClient.AddCachedStream(HccUtil.url_join(hccConfig.url,hccConfig.files[i].url),
+                                data,
+                                headers: headerString,
+                                zipped: hcClient.zipped,
+                                encrypted: 1);
                         }
                         else
                         {
-                            hcClient.AddCachedStream(HccUtil.url_join(hccConfig.url, hccConfig.files[i].url), data, headers: headerString, zipped: 0); // hcc.zipped);
+                            hcClient.AddCachedStream(HccUtil.url_join(hccConfig.url, hccConfig.files[i].url),
+                                data,
+                                headers: headerString,
+                                zipped: 0);
                         }
                     }
                 }
             }
-            
+
             import_status_set("got list of external from " + server + " with " + hccConfig.externalUrl.Length.ToString() + " entries");
             for (int i = 0; i < hccConfig.externalUrl.Length; i++)
             {
                 import_status_set("get entry " + (i + 1).ToString() + " - " + hccConfig.externalUrl.Length.ToString());
-                using (HttpResponseMessage response = await httpClient.GetAsync(hccConfig.externalUrl[i].url, HttpCompletionOption.ResponseContentRead))
+                using (HttpResponseMessage response = await httpClient.GetAsync(hccConfig.externalUrl[i].url, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false))
                 {
                     string headerString = hcClient.GetCachedHeader(response.Headers);
 
-                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+                    Stream streamToReadFrom = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
                     Stream strm = new MemoryStream();
                     streamToReadFrom.CopyTo(strm);
@@ -254,22 +248,20 @@ namespace hcc
                         }
                         else
                         {
-                            hcClient.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped); 
+                            hcClient.AddCachedStream(hccConfig.externalUrl[i].url, data, headers: headerString, zipped: zipped);
                         }
                     }
                 }
             }
         }
+
         private void import_status_set(string status)
         {
             lblImportStatus.Text = status;
         }
-        private void import_status_add(string status)
-        {
-            lblImportStatus.Text += Environment.NewLine + status;
-        }
     }
-    class hccManagerNodeEntry
+
+    internal class HccManagerNodeEntry
     {
         public string fname { get; set; }
         public string url { get; set; }
@@ -277,24 +269,15 @@ namespace hcc
         public Boolean needReplace { get; set; }
         public Boolean canBeZipped { get; set; }
     }
-    class bindingObj
+
+    internal class BindingObj
     {
-        private SqLiteCacheItem _SelectedItem;
-        public SqLiteCacheItem SelectedItem
-        {
-            get
-            {
-                return _SelectedItem;
-            }
-            set
-            {
-                _SelectedItem = value;
-            }
-        }
+        public SqLiteCacheItem SelectedItem { get; set; }
     }
-    public class hccTag
+
+    public static class HccTag
     {
-        public static readonly BindableProperty TagProperty = BindableProperty.Create("Tag", typeof(string), typeof(hccTag), null);
+        public static readonly BindableProperty TagProperty = BindableProperty.Create("Tag", typeof(string), typeof(HccTag), null);
 
         public static string GetTag(BindableObject bindable)
         {
@@ -306,6 +289,7 @@ namespace hcc
             bindable.SetValue(TagProperty, value);
         }
     }
+
     public static class Bom
     {
         // got from https://stackoverflow.com/a/16315911

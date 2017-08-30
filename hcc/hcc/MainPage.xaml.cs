@@ -11,8 +11,8 @@ namespace hcc
 {
     public partial class MainPage : ContentPage
     {
-        private ISql SQL;
-        private SqLiteCache sqLiteCache;
+        readonly internal ISql SQL;
+        readonly internal SqLiteCache sqLiteCache;
 
         public MainPage()
         {
@@ -21,7 +21,7 @@ namespace hcc
             this.sqLiteCache = new SqLiteCache( SQL, "");
         }
 
-        private async void tbGet_Clicked(object sender, EventArgs e)
+        private async void tbGet_ClickedAsync(object sender, EventArgs e)
         {
             string url = tbUrl.Text.Trim();
             tbInfo.Text = "";
@@ -36,15 +36,15 @@ namespace hcc
                 if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pwd))
                 {
                     hc.authenticationHeaderValue = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic",
-                    Convert.ToBase64String(
-                        System.Text.UTF8Encoding.UTF8.GetBytes(
-                            string.Format("{0}:{1}", user, pwd))));
+                        Convert.ToBase64String(
+                            Encoding.UTF8.GetBytes(
+                                string.Format("{0}:{1}", user, pwd))));
                 }
                 else
                 {
                     hc.authenticationHeaderValue = null;
                 }
-                if (cbEncrypted.IsToggled )
+                if (cbEncrypted.IsToggled)
                 {
                     hc.encryptFunction = (urlRequested, data) =>
                     {
@@ -69,7 +69,7 @@ namespace hcc
                     return 0;
                 };
 
-                if (cbZipped.IsToggled )
+                if (cbZipped.IsToggled)
                 {
                     hc.zipped = 1;
                 }
@@ -78,9 +78,9 @@ namespace hcc
                     hc.zipped = 0;
                 }
 
-                if (cbAddHeaders.IsToggled )
+                if (cbAddHeaders.IsToggled)
                 {
-                    hc.addHeaders= true;
+                    hc.addHeaders = true;
                     hc.includeHeaders = new string[] { };
                 }
                 else
@@ -118,9 +118,11 @@ namespace hcc
             }
             catch (Exception ex)
             {
-                tbContent.Text = ex.Message + Environment.NewLine;
-                if(ex.InnerException != null )
-                    tbContent.Text += ex.InnerException.Message;
+                Device.BeginInvokeOnMainThread(() => {
+                    tbContent.Text = ex.Message + Environment.NewLine;
+                    if (ex.InnerException != null)
+                        tbContent.Text += ex.InnerException.Message;
+                });
             }
         }
 
@@ -142,10 +144,10 @@ namespace hcc
             tbInfo.Text = string.Join(Environment.NewLine, ids);
         }
 
-        private async void btnManager_Clicked(object sender, EventArgs e)
+        private async void btnManager_ClickedAsync(object sender, EventArgs e)
         {
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
-            await Navigation.PushAsync(new hccManagerPage
+            await Navigation.PushAsync(new HccManagerPage
             {
                 BindingContext = hc
             }).ConfigureAwait(false);

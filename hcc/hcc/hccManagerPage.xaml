@@ -2,7 +2,7 @@
 <TabbedPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
             xmlns:local="clr-namespace:hcc;assembly=hcc"
-             x:Class="hcc.hccManagerPage">
+             x:Class="hcc.HccManagerPage">
   <!--Pages can be added as references or inline-->
     <ContentPage Title="Database" >
         <StackLayout Margin="20" VerticalOptions="StartAndExpand">
@@ -151,7 +151,7 @@
                 <Label Grid.Row="0" Grid.Column="0" Text="{Binding url}" VerticalTextAlignment="Center" HorizontalOptions="StartAndExpand" />
                 <Label Grid.Row="0" Grid.Column="1" Text="{Binding size}" VerticalTextAlignment="Center" HorizontalOptions="EndAndExpand" />
                 <Label Grid.Row="0" Grid.Column="2" Text="{Binding zipped}" VerticalTextAlignment="Center" HorizontalOptions="EndAndExpand" />
-                <Button Grid.Row="1" Grid.Column="0" Text="Delete" local:hccTag.Tag="{Binding url}"  Clicked="btnEntryDelete_Clicked"  HorizontalOptions="StartAndExpand"/>
+                <Button Grid.Row="1" Grid.Column="0" Text="Delete" local:HccTag.Tag="{Binding url}"  Clicked="btnEntryDelete_Clicked"  HorizontalOptions="StartAndExpand"/>
 
 
             </Grid>
@@ -178,7 +178,7 @@
                 <Entry Grid.Row="0" Grid.Column="1" x:Name="tbImportServer" Text="http://localhost:3000/"  />
                 <Label Grid.Row="1" Grid.Column="0" Text="Site" />
                 <Entry Grid.Row="1" Grid.Column="1" x:Name="tbImportSite" Text="test"  />
-                <Button Grid.Row="2" Grid.Column="0"  x:Name="btnImport" Text="Import" Clicked="btnImport_Clicked"/>
+                <Button Grid.Row="2" Grid.Column="0"  x:Name="btnImport" Text="Import" Clicked="btnImport_ClickedAsync"/>
 
                 <Label Grid.Row="3" Grid.Column="0" x:Name="lblImportStatus" Text="" />
 

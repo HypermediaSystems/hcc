@@ -91,9 +91,33 @@ namespace HMS.Net.Http
         private void Create()
         {
             // ToDo: what about migrating the database?
-            sqlite3.CreateTable<SqLiteAlias>();
-            sqlite3.CreateTable<SqLiteMetadata>();
-            sqlite3.CreateTable<SqLiteCacheItem>();
+            /* we may get exceptions here when we have breaking changes
+             * this must be logged in some way
+             */
+            try
+            {
+                sqlite3.CreateTable<SqLiteAlias>();
+            }
+            catch (Exception ex)
+            {
+                throw new HccException("Error creating table SqLiteAlias ", ex);
+            }
+            try
+            {
+                sqlite3.CreateTable<SqLiteMetadata>();
+            }
+            catch (Exception ex)
+            {
+                throw new HccException("Error creating table SqLiteMetadata ", ex);
+            }
+            try
+            {
+                sqlite3.CreateTable<SqLiteCacheItem>();
+            }
+            catch (Exception ex)
+            {
+                throw new HccException("Error creating table SqLiteCacheItem ", ex);
+            }
 
             var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == "hcc.version");
             if (entry.Count() == 0)
@@ -160,7 +184,7 @@ namespace HMS.Net.Http
             else if (maxCount > 0)
             {
             }
-            throw new Exception("not implemented");
+            throw new NotImplementedException("not implemented");
         }
 
         public void DeleteAllData()
@@ -434,6 +458,21 @@ namespace HMS.Net.Http
         public string asString()
         {
             return value.ToString();
+        }
+    }
+
+    public class HccException:Exception
+    {
+        public HccException() : base()
+        {
+        }
+
+        public HccException(string message) : base(message)
+        {
+        }
+
+        public HccException(string message, Exception innerException) : base(message, innerException)
+        {
         }
     }
 }

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 namespace HMS.Net.Http
 {
     public interface IDataProvider
-
     {
         string GetString(string url);
 
@@ -75,7 +74,6 @@ namespace HMS.Net.Http
     }
 
     public interface IDataItem
-
     {
         byte zipped { get; set; }
         byte encrypted { get; set; }

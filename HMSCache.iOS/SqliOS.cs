@@ -6,9 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HMS.Net.Http;
-
 using HMS.Net.Http.iOS.SQLImplementation;
-// using Xamarin.Forms.Internals;
+
 using System.IO;
 
 // [assembly: Xamarin.Forms.Dependency(typeof(SqliOS))]
@@ -17,19 +16,19 @@ namespace HMS.Net.Http.iOS.SQLImplementation
    // [Preserve]
     public class SqliOS : ISql
     {
-        IFolder folder;
-        string SqlConnectionString;
-        string SqlDBName;
+        private readonly string SqlConnectionString;
+        private readonly string SqlDBName;
         public SqliOS()
         {
             string dbName = HttpCachedClient._dbName;
 
-            folder = FileSystem.Current.LocalStorage;
+            IFolder folder = FileSystem.Current.LocalStorage;
 
             SqlDBName = PortablePath.Combine(folder.Path, dbName + ".sqlite");
 
             SqlConnectionString = SqlDBName; // "Data Source=" +
         }
+
         public Byte[] GetBytes()
         {
             byte[] bytes = null;
@@ -40,6 +39,7 @@ namespace HMS.Net.Http.iOS.SQLImplementation
             }
             return bytes;
         }
+
         public void SetBytes(Byte[] bytes)
         {
             using (FileStream file = new FileStream(SqlDBName, FileMode.Open, System.IO.FileAccess.Write))
@@ -47,6 +47,7 @@ namespace HMS.Net.Http.iOS.SQLImplementation
                 file.Write(bytes, 0, (int)bytes.Length);
             }
         }
+
         public Boolean Reset()
         {
             Boolean ret = false;
@@ -57,6 +58,7 @@ namespace HMS.Net.Http.iOS.SQLImplementation
             }
             return ret;
         }
+
         public string GetDBName()
         {
             return SqlDBName;
@@ -66,10 +68,10 @@ namespace HMS.Net.Http.iOS.SQLImplementation
         {
             return new SQLiteConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.FullMutex); //  
         }
+
         public SQLiteAsyncConnection GetAsyncConnection()
         {
             return new SQLiteAsyncConnection(SqlConnectionString, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create );
         }
     }
-
 }
