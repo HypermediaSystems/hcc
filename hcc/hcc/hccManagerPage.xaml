@@ -6,7 +6,6 @@
   <!--Pages can be added as references or inline-->
     <ContentPage Title="Database" >
         <StackLayout Margin="20" VerticalOptions="StartAndExpand">
-
             <Grid ColumnSpacing="10"
                     RowSpacing="10"
                     HorizontalOptions="FillAndExpand"
@@ -52,7 +51,7 @@
                 </Grid.ColumnDefinitions>
                 <Button Grid.Row="0" Grid.Column="0"  x:Name="btnDeleteAll" Text="DeleteAll" Clicked="btnDeleteAll_Clicked" />
                 <Button Grid.Row="0" Grid.Column="1"  x:Name="btnLoop" Text="Loop" Clicked="tbLoop_Clicked" />
-                <Entry Grid.Row="1" Grid.Column="0"  x:Name="tbServer" Text="http://localhost:3000"  />
+                <Entry Grid.Row="1" Grid.Column="0"  x:Name="tbServer" Text="http://192.168.30.103:3000"  />
                 <Button Grid.Row="1" Grid.Column="1"  x:Name="btnBackup" Text="Backup" Clicked="btnBackup_Clicked" />
                 <Button Grid.Row="1" Grid.Column="2"  x:Name="btnRestore" Text="Restore" Clicked="btnRestore_Clicked" />
                 <Label Grid.Row="2" Grid.Column="0"  x:Name="lblServerStatus" Text=""  />
@@ -175,7 +174,7 @@
                     <ColumnDefinition Width="3*" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Text="Server" />
-                <Entry Grid.Row="0" Grid.Column="1" x:Name="tbImportServer" Text="http://localhost:3000/"  />
+                <Entry Grid.Row="0" Grid.Column="1" x:Name="tbImportServer" Text="http://192.168.30.103:3000/"  />
                 <Label Grid.Row="1" Grid.Column="0" Text="Site" />
                 <Entry Grid.Row="1" Grid.Column="1" x:Name="tbImportSite" Text="test"  />
                 <Button Grid.Row="2" Grid.Column="0"  x:Name="btnImport" Text="Import" Clicked="btnImport_ClickedAsync"/>

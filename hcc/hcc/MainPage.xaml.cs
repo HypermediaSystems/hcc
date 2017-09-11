@@ -64,7 +64,8 @@ namespace hcc
                 }
 
                 // if we have to set additional headers we can that by setting beforeGetAsyncFunction
-                hc.beforeGetAsyncFunction = (urlRequested, httpCachedClient) => {
+                hc.beforeGetAsyncFunction = (urlRequested, httpCachedClient) =>
+                {
                     httpCachedClient.DefaultRequestHeaders.Add("X-Clacks-Overhead", "GNU Terry Pratchett");
                     return 0;
                 };
@@ -88,37 +89,40 @@ namespace hcc
                     hc.addHeaders = false;
                     hc.includeHeaders = null;
                 }
-                await hc.GetCachedStringAsync(url, (json, hi) =>
-                {
-                    StringBuilder bld = new StringBuilder();
-                    bld.Append("responseStatus: ").Append(hi.responseStatus.ToString()).Append(Environment.NewLine);
-                    bld.Append("fromDB:   ").Append(hi.fromDb.ToString()).Append(Environment.NewLine);
-                    bld.Append("zipped:   ").Append(hi.zipped.ToString()).Append(Environment.NewLine);
-                    bld.Append("encrypted:").Append(hi.encrypted.ToString()).Append(Environment.NewLine);
-                    bld.Append("size:     ").Append(hi.size.ToString()).Append(Environment.NewLine);
-                    bld.Append("url:      ").Append(hi.url).Append(Environment.NewLine);
-                    if (!string.IsNullOrEmpty(hi.aliasUrl))
-                        bld.Append("aliasUrl: ").Append(hi.aliasUrl).Append(Environment.NewLine);
+                HccResponse hccResponse = await hc.GetCachedStringAsync(url);
+                StringBuilder bld = new StringBuilder();
+                bld.Append("responseStatus: ").Append(hccResponse.hccInfo.responseStatus.ToString()).Append(Environment.NewLine);
+                bld.Append("fromDB:   ").Append(hccResponse.hccInfo.fromDb.ToString()).Append(Environment.NewLine);
+                bld.Append("zipped:   ").Append(hccResponse.hccInfo.zipped.ToString()).Append(Environment.NewLine);
+                bld.Append("encrypted:").Append(hccResponse.hccInfo.encrypted.ToString()).Append(Environment.NewLine);
+                bld.Append("size:     ").Append(hccResponse.hccInfo.size.ToString()).Append(Environment.NewLine);
+                bld.Append("url:      ").Append(hccResponse.hccInfo.url).Append(Environment.NewLine);
+                if (!string.IsNullOrEmpty(hccResponse.hccInfo.aliasUrl))
+                    bld.Append("aliasUrl: ").Append(hccResponse.hccInfo.aliasUrl).Append(Environment.NewLine);
 
-                    bld.Append(Environment.NewLine);
-                    if (hi.hhh != null)
+                bld.Append(Environment.NewLine);
+                if (hccResponse.hccInfo.hhh != null)
+                {
+                    bld.Append("Header-Info:").Append(Environment.NewLine);
+                    foreach (var h in hccResponse.hccInfo.hhh.items)
                     {
-                        bld.Append("Header-Info:").Append(Environment.NewLine);
-                        foreach (var h in hi.hhh.items)
-                        {
-                            bld.Append("    ").Append(h.Key).Append(": ").Append(h.Value[0]).Append(Environment.NewLine);
-                        }
+                        bld.Append("    ").Append(h.Key).Append(": ").Append(h.Value[0]).Append(Environment.NewLine);
                     }
-                    bld.Append("Cache-Info:").Append(Environment.NewLine);
-                    bld.Append("    Size: ").Append(hc.GetCachedSize().ToString()).Append(Environment.NewLine);
-                    bld.Append("    Count:").Append(hc.GetCachedCount().ToString()).Append(Environment.NewLine);
+                }
+                bld.Append("Cache-Info:").Append(Environment.NewLine);
+                bld.Append("    Size: ").Append(hc.GetCachedSize().ToString()).Append(Environment.NewLine);
+                bld.Append("    Count:").Append(hc.GetCachedCount().ToString()).Append(Environment.NewLine);
+                Device.BeginInvokeOnMainThread(() =>
+                {
                     tbInfo.Text = bld.ToString();
-                    tbContent.Text = json;
-                }).ConfigureAwait(false);
+                    tbContent.Text = hccResponse.json;
+                });
+                // }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                Device.BeginInvokeOnMainThread(() => {
+                Device.BeginInvokeOnMainThread(() =>
+                {
                     tbContent.Text = ex.Message + Environment.NewLine;
                     if (ex.InnerException != null)
                         tbContent.Text += ex.InnerException.Message;
@@ -133,14 +137,20 @@ namespace hcc
 
             tbContent.Text = url +  " deleted from cache.";
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
-            hc.DeleteCachedData(url);
+            Task.Run(async () =>
+            {
+                await hc.DeleteCachedDataAsync(url);
+            }).Wait();
         }
 
         private void tbList_Clicked(object sender, EventArgs e)
         {
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
-            string[] ids = hc.GetCachedUrls("");
-
+            string[] ids = null;
+            Task.Run(async () =>
+            {
+                 ids = await hc.GetCachedUrlsAsync("");
+            }).Wait();
             tbInfo.Text = string.Join(Environment.NewLine, ids);
         }
 
@@ -151,6 +161,16 @@ namespace hcc
             {
                 BindingContext = hc
             }).ConfigureAwait(false);
+        }
+
+        private void btnReset_Clicked(object sender, EventArgs e)
+        {
+            HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+
+            Task.Run(async () =>
+            {
+                 await hc.ResetAsync();
+            }).Wait();
         }
     }
 }

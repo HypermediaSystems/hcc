@@ -108,14 +108,13 @@ namespace HMS.Net.Http
 
         public async Task<Boolean> BackupAsync(string serverUrl, AuthenticationHeaderValue authentication = null)
         {
-            Byte[] bytes = this.cache.GetBytes();
+            Byte[] bytes = await this.cache.GetBytesAsync();
             using (var client = new HttpClient())
             {
                 if (authentication != null)
                     client.DefaultRequestHeaders.Authorization = authentication;
 
-                using (var content =
-                    new MultipartFormDataContent("Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture)))
+                using (var content = new MultipartFormDataContent()) // "Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture)))
                 {
                     content.Add(new StreamContent(new MemoryStream(bytes)), "file", HttpCachedClient._dbName + ".sqlite");
 
@@ -131,28 +130,14 @@ namespace HMS.Net.Http
             }
         }
 
-        public async Task<Boolean> RestoreAsync(string serverUrl, AuthenticationHeaderValue authentication = null)
+        public async Task<Boolean> Backup(string serverUrl, AuthenticationHeaderValue authentication=null )
         {
+            Byte[] bytes = await this.cache.GetBytesAsync();
             using (var client = new HttpClient())
             {
                 if (authentication != null)
-                    client.DefaultRequestHeaders.Authorization = authentication;
+                   client.DefaultRequestHeaders.Authorization = authentication;
 
-                Byte[] bytes = await client.GetByteArrayAsync(serverUrl).ConfigureAwait(false);
-
-                this.cache.SetBytes(bytes);
-            }
-            return true;
-        }
-
-        public Boolean Backup(string serverUrl) //, AuthenticationHeaderValue authentication )
-        {
-            Byte[] bytes = this.cache.GetBytes();
-            using (var client = new HttpClient())
-            {
-                /*  if (authentication != null)
-                *      client.DefaultRequestHeaders.Authorization = authentication;
-                */
                 string boundary = "Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture);
                 boundary = boundary.Replace(" ", "-");
                 using (var content = new MultipartFormDataContent(boundary))
@@ -180,19 +165,30 @@ namespace HMS.Net.Http
             }
         }
 
-        public Boolean Reset()
+        public Task ResetAsync()
         {
-            this.cache.Reset();
-
-            return true;
+            return this.cache.ResetAsync();
         }
 
-        public Boolean Restore(string serverUrl) // , AuthenticationHeaderValue authentication )
+        public async Task<Boolean> xxRestoreAsync(string serverUrl, AuthenticationHeaderValue authentication = null)
         {
             using (var client = new HttpClient())
             {
-                //  if (authentication != null)
-                //      client.DefaultRequestHeaders.Authorization = authentication;
+                if (authentication != null)
+                    client.DefaultRequestHeaders.Authorization = authentication;
+
+                Byte[] bytes = await client.GetByteArrayAsync(serverUrl).ConfigureAwait(false);
+
+                await this.cache.SetBytesAsync(bytes);
+            }
+            return true;
+        }
+        public async Task<Boolean> RestoreAsync(string serverUrl , AuthenticationHeaderValue authentication = null )
+        {
+            using (var client = new HttpClient())
+            {
+                if (authentication != null)
+                    client.DefaultRequestHeaders.Authorization = authentication;
 
                 Byte[] bytes = null;
                 try
@@ -200,7 +196,7 @@ namespace HMS.Net.Http
                     Task.Run(async () =>
                         bytes = await client.GetByteArrayAsync(serverUrl).ConfigureAwait(false)
                     ).Wait();
-                    this.cache.SetBytes(bytes);
+                    await this.cache.SetBytesAsync(bytes);
                 }
                 catch (Exception)
                 {
@@ -218,11 +214,11 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetCachedStreamAsync(string url, Action<Stream, HccInfo> callback)
+        public async Task<HccResponse> GetCachedStreamAsync(string url)
         {
             HccInfo hi = new HccInfo();
 
-            string useUrl = this.cache.GetUrlFromAlias(url);
+            string useUrl = await this.cache.GetUrlFromAliasAsync(url);
 
             hi.url = url;
             if (useUrl != url)
@@ -231,13 +227,13 @@ namespace HMS.Net.Http
                 hi.url = useUrl;
             }
             // check if this is in the cache
-            byte[] data = this.cache.GetData(useUrl);
+            byte[] data = await this.cache.GetDataAsync(useUrl);
             if (data != null)
             {
                 hi.fromDb = true;
                 if (this.addInfo )
                 {
-                    IDataItem item = this.cache.GetInfo(useUrl);
+                    IDataItem item = await this.cache.GetInfoAsync(useUrl);
                     if (item != null)
                     {
                         hi.withInfo = true;
@@ -246,7 +242,7 @@ namespace HMS.Net.Http
                 }
                 if (this.addHeaders )
                 {
-                    hi.hhh = this.cache.GetHeaders(useUrl);
+                    hi.hhh = await this.cache.GetHeadersAsync(useUrl);
                 }
 
                 if (this.decryptFunction != null && hi.encrypted == 1)
@@ -255,8 +251,8 @@ namespace HMS.Net.Http
                 }
                 hi.size = data.Length;
                 Stream streamToReadFrom = new MemoryStream(data);
-                callback(streamToReadFrom, hi);
-                return 1;
+                // callback(new HccResponse( streamToReadFrom, hi));
+                return new HccResponse(streamToReadFrom, hi);
             }
             if ( !this.isOffline )
             {
@@ -266,7 +262,7 @@ namespace HMS.Net.Http
                 if (this.beforeGetAsyncFunction != null)
                     this.beforeGetAsyncFunction(useUrl, this);
 
-                using (HttpResponseMessage response = await this.GetAsync(useUrl, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false))
+                using (HttpResponseMessage response = await this.GetAsync(useUrl, HttpCompletionOption.ResponseContentRead).ConfigureAwait(true))
                 {
                     string headerString = this.GetCachedHeader(response.Headers);
 
@@ -284,11 +280,11 @@ namespace HMS.Net.Http
                             {
                                 data = this.encryptFunction(useUrl, data);
 
-                                this.cache.SetData(useUrl, data, headers: headerString, zipped: this.zipped, encrypted: 1);
+                                await this.cache.SetDataAsync(useUrl, data, headers: headerString, zipped: this.zipped, encrypted: 1);
                             }
                             else
                             {
-                                this.cache.SetData(useUrl, data, headers: headerString, zipped: this.zipped);
+                                await this.cache.SetDataAsync(useUrl, data, headers: headerString, zipped: this.zipped);
                             }
                         }
                         strm.Seek(0, SeekOrigin.Begin);
@@ -302,13 +298,13 @@ namespace HMS.Net.Http
                     {
                         hi.hhh = this.cache.GetHeadersFromString(headerString);
                     }
-                    callback(strm, hi);
-                    return 0;
+                    // callback(new HccResponse( strm, hi));
+                    return new HccResponse(strm, hi);
                 }
             }
             hi.size = 0;
-            callback(null, hi);
-            return 0;
+            // callback(new HccResponse((Stream) null, hi));
+            return new HccResponse((Stream)null, hi);
         }
 
         /// <summary>
@@ -317,24 +313,24 @@ namespace HMS.Net.Http
         /// This can only be successful for absolute urls.
         /// </summary>
         /// <param name="url"></param>
-        /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetCachedStringAsync(string url, Action<string, HccInfo> callback)
+        public async Task<HccResponse> GetCachedStringAsync(string url)
         {
-            await this.GetCachedStreamAsync(url, (strm, hi) =>
-            {
-                if (strm != null)
+            HccResponse hccResponse =  await this.GetCachedStreamAsync(url);
+                if (hccResponse.stream != null)
                 {
-                    var bytes = ((MemoryStream)strm).ToArray();
+                    var bytes = ((MemoryStream)hccResponse.stream).ToArray();
                     string str = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                    callback(str, hi);
+                // callback(new HccResponse(str, hccResponse.hccInfo));
+                return new HccResponse(str, hccResponse.hccInfo);
                 }
                 else
                 {
-                    callback(null, hi);
+                // callback(new HccResponse((string)null, hccResponse.hccInfo));
+                return new HccResponse((string)null, hccResponse.hccInfo);
                 }
-            }).ConfigureAwait(false);
-            return 0;
+            // }).ConfigureAwait(false);
+            // return 0;
         }
 
         /// <summary>
@@ -345,19 +341,19 @@ namespace HMS.Net.Http
         /// <param name="url"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public async Task<int> GetCachedStringOldAsync(string url, Action<string, HccInfo> callback)
+        public async Task<int> GetCachedStringOldAsync(string url, Action<HccResponse> callback)
         {
             HccInfo hi = new HccInfo();
 
             // check if this is in the cache
-            string data = this.cache.GetString(url);
+            string data = await this.cache.GetStringAsync(url);
             if (data != null)
             {
                 hi.fromDb = true;
 
                 if (this.addInfo )
                 {
-                    IDataItem item = this.cache.GetInfo(url);
+                    IDataItem item = await this.cache.GetInfoAsync(url);
                     if (item != null)
                     {
                         hi.withInfo = true;
@@ -366,7 +362,7 @@ namespace HMS.Net.Http
                 }
                 if (this.addHeaders )
                 {
-                    hi.hhh = this.cache.GetHeaders(url);
+                    hi.hhh = await this.cache.GetHeadersAsync(url);
                 }
                 if (this.decryptFunction != null && hi.encrypted == 1)
                 {
@@ -375,7 +371,7 @@ namespace HMS.Net.Http
                     data = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                 }
 
-                callback(data, hi);
+                // callback(data, hi);
                 return 1;
             }
             // ToDo: check for absolute url
@@ -399,11 +395,11 @@ namespace HMS.Net.Http
                     {
                         Byte[] bytes = Encoding.UTF8.GetBytes(responseString);
                         bytes = this.encryptFunction(url, bytes);
-                        this.cache.SetData(url, bytes, headers: headerString, zipped: this.zipped, encrypted: 1);
+                        await this.cache.SetDataAsync(url, bytes, headers: headerString, zipped: this.zipped, encrypted: 1);
                     }
                     else
                     {
-                        this.cache.SetString(url, responseString, headers: headerString, zipped: this.zipped);
+                        await this.cache.SetStringAsync(url, responseString, headers: headerString, zipped: this.zipped);
                     }
                 }
                 else
@@ -411,11 +407,11 @@ namespace HMS.Net.Http
                     responseString = "";
                 }
 
-                callback(responseString, hi);
+                // callback(responseString, hi);
                 return 0;
             }
         }
-
+        // TODO: this should be moved to HttpCachedResponse.
         public string GetCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
         {
             StringBuilder bld = new StringBuilder();
@@ -451,18 +447,37 @@ namespace HMS.Net.Http
         /// This includes only the data and the header.<para/>
         /// </summary>
         /// <returns></returns>
+        public async Task<long> GetCachedSizeAsync()
+        {
+            return await this.cache.SizeAsync();
+        }
         public long GetCachedSize()
         {
-            return this.cache.Size();
-        }
+            long lret = 0;
+            Task.Run(async () =>
+            {
+                lret = await this.cache.SizeAsync();
 
+            }).Wait();
+            return lret;
+        }
         /// <summary>
         /// Get the number of entries stored in the cache.<para/>
         /// </summary>
         /// <returns></returns>
+        public async Task<long> GetCachedCountAsync()
+        {
+            return await this.cache.CountAsync();
+        }
         public long GetCachedCount()
         {
-            return this.cache.Count();
+            long lret = 0;
+            Task.Run(async () =>
+            {
+                lret = await this.cache.CountAsync();
+
+            }).Wait();
+            return lret;
         }
 
         /// <summary>
@@ -471,9 +486,9 @@ namespace HMS.Net.Http
         /// </summary>
         /// <param name="pattern"></param>
         /// <returns></returns>
-        public string[] GetCachedUrls(string pattern)
+        public async Task<string[]> GetCachedUrlsAsync(string pattern)
         {
-            return this.cache.GetIDs(pattern, this.SqlLimit);
+            return await this.cache.GetIDsAsync(pattern, this.SqlLimit);
         }
 
         /// <summary>
@@ -482,9 +497,9 @@ namespace HMS.Net.Http
         /// </summary>
         /// <param name="id"></param>
         /// <param name="data"></param>
-        public void AddCachedString(string id, string data)
+        public async Task AddCachedStringAsync(string id, string data)
         {
-            this.cache.SetString(id, data, overwrite: true);
+            await this.cache.SetStringAsync(id, data, overwrite: true);
         }
         /// <summary>
         /// Add the given stream to the cache.<para/>
@@ -495,53 +510,72 @@ namespace HMS.Net.Http
         /// <param name="overwrite"></param>
         /// <param name="zipped"></param>
         /// <param name="encrypted"></param>
-        public void AddCachedStream(string id, byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
+        public async Task AddCachedStreamAsync(string id, byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
-            this.cache.SetData(id, data, headers: headers, overwrite: overwrite, zipped: zipped, encrypted: encrypted);
+            await this.cache.SetDataAsync(id, data, headers: headers, overwrite: overwrite, zipped: zipped, encrypted: encrypted);
         }
 
-        public void AddCachedMetadata(string id, string data)
+        public async Task AddCachedMetadataAsync(string id, string data)
         {
-            this.cache.SetMetadata(id, data);
+            await this.cache.SetMetadataAsync(id, data);
         }
 
-        public void AddCachedAliasUrl(string aliasUrl, string url)
+        public async Task AddCachedAliasUrlAsync(string aliasUrl, string url)
         {
-            this.cache.SetAlias(aliasUrl, url);
+            await this.cache.SetAliasAsync(aliasUrl, url);
         }
 
         /// <summary>
         /// Delete the entry from the cache.
         /// </summary>
         /// <param name="id"></param>
-        public void DeleteCachedData(string id)
+        public async Task DeleteCachedDataAsync(string id)
         {
-            this.cache.Delete(id);
+            await this.cache.DeleteAsync(id);
         }
 
         /// <summary>
         /// remove all entries from the cache
         /// </summary>
-        public void DeleteAllCachedData()
+        public async Task DeleteAllCachedDataAsync()
         {
-            this.cache.DeleteAllData();
+            await this.cache.DeleteAllDataAsync();
         }
 
         #region DATABAINDING
 
         public string DBName { get { return this.cache.DBName(); } }
         public string DBPath { get { return this.cache.DBPath(); } }
-        public string DBSize { get { return this.cache.Size().ToString(); } }
-        public string DBCount { get { return this.cache.Count().ToString(); } }
-
-        public IEnumerable<SqLiteCacheItem> DBEntries(string urlPattern)
+        public string DBSize
         {
-            return this.cache.GetEntries(urlPattern);
+            get
+            {
+                long ret = 0;
+                Task.Run(async () =>
+                {
+                    ret = await this.cache.SizeAsync();
+                }).Wait();
+                return ret.ToString();
+            }
         }
 
-        public SqLiteCacheItem DBEntry(string url)
+        public string DBCount { get {
+                int ret = 0;
+                Task.Run(async () =>
+                {
+                    ret = await this.cache.CountAsync();
+                }).Wait();
+                return ret.ToString();
+            } }
+
+        public async Task<IEnumerable<SqLiteCacheItem>> DBEntriesAsync(string urlPattern)
         {
-            return this.cache.GetEntry(url);
+            return await this.cache.GetEntriesAsync(urlPattern);
+        }
+
+        public async Task<SqLiteCacheItem> DBEntryAsync(string url)
+        {
+            return await this.cache.GetEntryAsync(url);
         }
 
         #endregion DATABAINDING
@@ -557,7 +591,22 @@ namespace HMS.Net.Http
             items = new Dictionary<string, string[]>();
         }
     }
-
+    public class HccResponse
+    {
+        public string json;
+        public Stream stream;
+        public HccInfo hccInfo;
+        public HccResponse(string json, HccInfo hcInfo)
+        {
+            this.json = json;
+            this.hccInfo = hcInfo;
+        }
+        public HccResponse(Stream stream, HccInfo hcInfo)
+        {
+            this.stream = stream;
+            this.hccInfo = hcInfo;
+        }
+    }
     public class HccInfo : IDataItem
 
     {

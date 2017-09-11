@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace HMS.Net.Http
 {
@@ -62,7 +63,7 @@ namespace HMS.Net.Http
     {
         private readonly string server;
 
-        private SQLiteConnection sqlite3 ;
+        private SQLiteAsyncConnection sqlite3 ;
 
         private readonly ISql platformSQL;
 
@@ -78,8 +79,8 @@ namespace HMS.Net.Http
             {
                 this.server = server;
                 // open/create the SQLite db
-                sqlite3 = SQL.GetConnection();
-                this.Create();
+                sqlite3 = SQL.GetAsyncConnection();
+                // await this.CreateAsync();
             }
             catch (Exception ex)
             {
@@ -88,7 +89,7 @@ namespace HMS.Net.Http
             }
         }
 
-        private void Create()
+        public async Task CreateAsync()
         {
             // ToDo: what about migrating the database?
             /* we may get exceptions here when we have breaking changes
@@ -96,72 +97,91 @@ namespace HMS.Net.Http
              */
             try
             {
-                sqlite3.CreateTable<SqLiteAlias>();
+                await sqlite3.CreateTableAsync<SqLiteAlias>().ContinueWith(async t =>
+                {
+                    try
+                    {
+                        await sqlite3.CreateTableAsync<SqLiteMetadata>().ContinueWith(async t2 => {
+                            try
+                            {
+                                await sqlite3.CreateTableAsync<SqLiteCacheItem>();
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HccException("Error creating table SqLiteCacheItem ", ex);
+                            }
+
+                            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == "hcc.version");
+                            int anz = await entry.CountAsync();
+                            if (anz == 0)
+                            {
+                                SqLiteMetadata md = new SqLiteMetadata();
+                                md.tag = "hcc.version";
+                                md.value = "1.2";
+                                await sqlite3.InsertAsync(md);
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new HccException("Error creating table SqLiteMetadata ", ex);
+                    }
+                });
             }
             catch (Exception ex)
             {
                 throw new HccException("Error creating table SqLiteAlias ", ex);
             }
-            try
-            {
-                sqlite3.CreateTable<SqLiteMetadata>();
-            }
-            catch (Exception ex)
-            {
-                throw new HccException("Error creating table SqLiteMetadata ", ex);
-            }
-            try
-            {
-                sqlite3.CreateTable<SqLiteCacheItem>();
-            }
-            catch (Exception ex)
-            {
-                throw new HccException("Error creating table SqLiteCacheItem ", ex);
-            }
 
-            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == "hcc.version");
-            if (entry.Count() == 0)
-            {
-                SqLiteMetadata md = new SqLiteMetadata();
-                md.tag = "hcc.version";
-                md.value = "1.2";
-                sqlite3.Insert(md);
-            }
+
+
+            
+            return ;
         }
 
-        public void Reset()
+        public async Task ResetAsync()
         {
-            this.Close();
-            this.platformSQL.Reset();
-            this.Reopen();
-            this.Create();
+            await this.CloseAsync().ContinueWith((t) =>
+            {
+                this.platformSQL.Reset();
+                this.Reopen();
+                this.CreateAsync();
+            });
         }
 
         private void Reopen()
         {
-            sqlite3 = platformSQL.GetConnection();
+            sqlite3 = platformSQL.GetAsyncConnection();
         }
 
-        private void Close()
+        private async Task CloseAsync()
         {
             if (sqlite3 != null)
             {
-                sqlite3.Close();
-                sqlite3.Dispose();
+                await Task.Factory.StartNew(() =>
+                {
+                    SQLite.SQLiteAsyncConnection.ResetPool();
+                    // sqlite3.GetConnection().Close();
+                    // sqlite3.GetConnection().Dispose();
+                    sqlite3 = null;
+
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                }).ConfigureAwait(false);
             }
         }
 
-        public Byte[] GetBytes()
+        public async  Task<Byte[]> GetBytesAsync()
         {
-            this.Close();
+            await this.CloseAsync();
             Byte[] bytes = this.platformSQL.GetBytes();
             this.Reopen();
             return bytes;
         }
 
-        public void SetBytes(Byte[] bytes)
+        public async Task SetBytesAsync(Byte[] bytes)
         {
-            this.Close();
+            await this.CloseAsync();
             this.platformSQL.SetBytes(bytes);
             this.Reopen();
         }
@@ -187,23 +207,30 @@ namespace HMS.Net.Http
             throw new NotImplementedException("not implemented");
         }
 
-        public void DeleteAllData()
+        public async Task DeleteAllDataAsync()
         {
-            sqlite3.Execute("DELETE FROM " + typeof(SqLiteCacheItem).Name);
+            await sqlite3.ExecuteAsync("DELETE FROM " + typeof(SqLiteCacheItem).Name);
         }
 
-        public long Count()
+        public async Task<int> CountAsync()
         {
-            return sqlite3.Table<SqLiteCacheItem>().Count();
+            try
+            {
+                return await sqlite3.Table<SqLiteCacheItem>().CountAsync();
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
         }
 
-        public long Size()
+        public async Task<long> SizeAsync()
         {
             long qry = 0;
 
             try
             {
-                qry = sqlite3.ExecuteScalar<long>("Select Sum(Size) as SIZE from " + typeof(SqLiteCacheItem).Name);
+                qry = await sqlite3.ExecuteScalarAsync<long>("Select Sum(Size) as SIZE from " + typeof(SqLiteCacheItem).Name);
             }
             catch (Exception)
             {
@@ -223,66 +250,67 @@ namespace HMS.Net.Http
             return url;
         }
 
-        public IDataItem GetInfo(string url)
+        public async Task<IDataItem> GetInfoAsync(string url)
         {
             SqLiteCacheItem retEntry = null;
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
 
-            if (entry.Count() > 0)
+            if (await entry.CountAsync() > 0)
             {
-                retEntry = new SqLiteCacheItem(entry.First());
+                retEntry = new SqLiteCacheItem(await entry.FirstAsync());
             }
             return retEntry;
         }
 
-        public string GetString(string url)
+        public async Task<string> GetStringAsync(string url)
         {
-            byte[] data = GetData(url);
+            byte[] data = await GetDataAsync(url);
             if (data == null)
                 return null;
             return Encoding.UTF8.GetString(data, 0, data.Length);
         }
 
-        public IEnumerable<SqLiteCacheItem> GetEntries(string urlPattern)
+        public async Task<IEnumerable<SqLiteCacheItem>> GetEntriesAsync(string urlPattern)
         {
-            return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url.Contains(urlPattern));
+            return await sqlite3.Table<SqLiteCacheItem>().Where(i => i.url.Contains(urlPattern)).ToListAsync();
         }
 
-        public SqLiteCacheItem GetEntry(string url)
+        public async Task<SqLiteCacheItem> GetEntryAsync(string url)
         {
-            return sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url).FirstOrDefault();
+            return await sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url).FirstOrDefaultAsync();
         }
 
-        public string GetMetadata(string tag)
+        public async Task<string> GetMetadataAsync(string tag)
         {
             var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == tag);
 
-            if (entry.Count() > 0)
+            int anz = await entry.CountAsync();
+            if (anz > 0)
             {
-                return entry.First().value;
+                return (await entry.FirstAsync()).value;
             }
 
             return null;
         }
 
-        public void SetAlias(string aliasUrl, string url)
+        public async Task SetAliasAsync(string aliasUrl, string url)
         {
             SqLiteAlias alias = new SqLiteAlias();
             alias.url = url;
-            alias.aliasUrl = aliasUrl;
             var entry = sqlite3.Table<SqLiteAlias>().Where(i => i.aliasUrl == aliasUrl);
 
-            if (entry.Count() > 0)
+            if (await entry.CountAsync() > 0)
             {
-                sqlite3.Delete<SqLiteAlias>(aliasUrl);
+                await sqlite3.DeleteAsync(alias);
             }
-            sqlite3.Insert(alias);
+            alias.aliasUrl = aliasUrl;
+            await sqlite3.InsertAsync(alias);
         }
 
-        public string GetUrlFromAlias(string aliasUrl)
+        public async Task<string> GetUrlFromAliasAsync(string aliasUrl)
         {
             string url = aliasUrl;
-            var entry = sqlite3.Table<SqLiteAlias>().Where(i => i.aliasUrl == aliasUrl).FirstOrDefault();
+            var entry = await sqlite3.Table<SqLiteAlias>().Where(i => i.aliasUrl == aliasUrl).FirstOrDefaultAsync();
 
             if ( entry?.url != null)
             {
@@ -291,15 +319,15 @@ namespace HMS.Net.Http
             return url;
         }
 
-        public Byte[] GetData(string url)
+        public async Task<Byte[]> GetDataAsync(string url)
         {
             url = this.clearUrl(url);
 
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
 
-            if (entry.Count() > 0)
+            if (await entry.CountAsync() > 0)
             {
-                SqLiteCacheItem sqlEntry = entry.First();
+                SqLiteCacheItem sqlEntry = await entry.FirstAsync();
                 if (sqlEntry.data != null)
                 {
                     byte[] data = sqlEntry.data;
@@ -314,7 +342,7 @@ namespace HMS.Net.Http
                     if ( !this.isReadonly )
                     {
                         // set the lastRead
-                        this.updateLastRead(sqlEntry.url);
+                        await this.updateLastReadAsync(sqlEntry.url);
                     }
                     return data;
                 }
@@ -322,20 +350,20 @@ namespace HMS.Net.Http
             return null;
         }
 
-        private void updateLastRead(string url)
+        private async Task updateLastReadAsync(string url)
         {
-            sqlite3.Execute("Update " + typeof(SqLiteCacheItem).Name + " set lastRead = ? Where Url = ?", DateTime.Now, url);
+            await sqlite3.ExecuteAsync("Update " + typeof(SqLiteCacheItem).Name + " set lastRead = ? Where Url = ?", DateTime.Now, url);
         }
 
-        public HccHttpHeaders GetHeaders(string url)
+        public async Task<HccHttpHeaders> GetHeadersAsync(string url)
         {
             url = this.clearUrl(url);
 
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
 
-            if (entry.Count() > 0)
+            if (await entry.CountAsync() > 0)
             {
-                SqLiteCacheItem sqlEntry = entry.First();
+                SqLiteCacheItem sqlEntry = await entry.FirstAsync();
                 if (sqlEntry.header != null)
                 {
                     byte[] headerData = sqlEntry.header;
@@ -363,13 +391,13 @@ namespace HMS.Net.Http
             return httpHeaders;
         }
 
-        public string[] GetIDs(string pattern, int SqlLimit)
+        public async Task<string[]> GetIDsAsync(string pattern, int SqlLimit)
         {
             List<string> ret = new List<string>();
             string SQL = "SELECT url from " + typeof(SqLiteCacheItem).Name + " where url LIKE '%" + pattern + "%'";
             SQL += " ORDER BY LastRead DESC ";
             SQL += " LIMIT " + SqlLimit.ToString();
-            var entries = sqlite3.Query<SqLiteCacheItem>(SQL, new string[] { });
+            var entries = (await sqlite3.QueryAsync<SqLiteCacheItem>(SQL, new string[] { })).ToArray();
             foreach (var entry in entries)
             {
                 ret.Add(entry.url);
@@ -378,34 +406,34 @@ namespace HMS.Net.Http
             return ret.ToArray();
         }
 
-        public void SetMetadata(string tag, string value)
+        public async Task SetMetadataAsync(string tag, string value)
         {
             SqLiteMetadata md = new SqLiteMetadata();
             var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == tag);
 
-            if (entry.Count() > 0)
-            {
-                sqlite3.Delete<SqLiteMetadata>(tag);
-            }
             md.tag = tag;
+            if (await entry.CountAsync() > 0)
+            {
+                await sqlite3.DeleteAsync(md);
+            }
             md.value = value;
-            sqlite3.Insert(md);
+            await sqlite3.InsertAsync(md);
         }
 
-        public void SetString(string url, string data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
+        public async Task SetStringAsync(string url, string data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
-            SetData(url, Encoding.UTF8.GetBytes(data), headers, overwrite, zipped, encrypted);
+            await SetDataAsync(url, Encoding.UTF8.GetBytes(data), headers, overwrite, zipped, encrypted);
         }
 
-        public void SetData(string url, Byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
+        public async Task SetDataAsync(string url, Byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
         {
             url = this.clearUrl(url);
 
-            if (Exists(url))
+            if (await ExistsAsync(url))
             {
                 if ( !overwrite )
                     return;
-                Delete(url);
+                await DeleteAsync(url);
             }
             SqLiteCacheItem ci = new SqLiteCacheItem();
             ci.url = url;
@@ -426,7 +454,7 @@ namespace HMS.Net.Http
             }
             try
             {
-                sqlite3.Insert(ci);
+                await sqlite3.InsertAsync(ci);
             }
             catch (Exception )
             {
@@ -434,20 +462,20 @@ namespace HMS.Net.Http
             }
         }
 
-        public void Delete(string url)
+        public async Task DeleteAsync(string url)
         {
             url = this.clearUrl(url);
 
-            sqlite3.Delete<SqLiteCacheItem>(url);
+            await sqlite3.DeleteAsync(new SqLiteCacheItem() { url = url });
         }
 
-        public Boolean Exists(string url)
+        public async Task<Boolean> ExistsAsync(string url)
         {
             url = this.clearUrl(url);
 
             var entry = sqlite3.Table<SqLiteCacheItem>().Where(i => i.url == url);
 
-            return entry.Count() > 0;
+            return await entry.CountAsync() > 0;
         }
     }
 

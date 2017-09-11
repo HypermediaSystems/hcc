@@ -1,58 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace HMS.Net.Http
 {
     public interface IDataProvider
     {
-        string GetString(string url);
+        Task<string> GetStringAsync(string url);
 
-        Byte[] GetData(string url);
+        Task<Byte[]> GetDataAsync(string url);
 
-        IEnumerable<SqLiteCacheItem> GetEntries(string urlPattern);
+        Task<IEnumerable<SqLiteCacheItem>> GetEntriesAsync(string urlPattern);
 
-        SqLiteCacheItem GetEntry(string url);
+        Task<SqLiteCacheItem >GetEntryAsync(string url);
 
-        IDataItem GetInfo(string url);
+        Task<IDataItem> GetInfoAsync(string url);
 
-        HccHttpHeaders GetHeaders(string url);
+        Task<HccHttpHeaders> GetHeadersAsync(string url);
 
         HccHttpHeaders GetHeadersFromString(string headerString);
 
-        string[] GetIDs(string pattern, int SqlLimit);
+        Task<string[]> GetIDsAsync(string pattern, int SqlLimit);
 
-        string GetMetadata(string tag);
+        Task<string> GetMetadataAsync(string tag);
 
-        string GetUrlFromAlias(string aliasUrl);
+        Task<string> GetUrlFromAliasAsync(string aliasUrl);
 
-        void SetAlias(string aliasUrl, string url);
+        Task SetAliasAsync(string aliasUrl, string url);
 
-        void SetMetadata(string tag, string value);
+        Task SetMetadataAsync(string tag, string value);
 
-        void SetString(string url, string data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0);
+        Task SetStringAsync(string url, string data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0);
 
-        void SetData(string url, Byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0);
+        Task SetDataAsync(string url, Byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0);
 
-        void Delete(string url);
+        Task DeleteAsync(string url);
 
-        Boolean Exists(string url);
+        Task<Boolean> ExistsAsync(string url);
 
         /// <summary>
         /// remove all entries from the cache
         /// </summary>
-        void DeleteAllData();
+        Task DeleteAllDataAsync();
 
         /// <summary>
         /// get the number of entries
         /// </summary>
         /// <returns></returns>
-        long Count();
+        Task<int> CountAsync();
 
         /// <summary>
         /// get the number of bytes in the cache
         /// </summary>
         /// <returns></returns>
-        long Size();
+        Task<long> SizeAsync();
 
         string DBName();
 
@@ -66,11 +67,11 @@ namespace HMS.Net.Http
         /// <returns></returns>
         long Reduce(long maxSize = 0, long maxCount = 0);
 
-        Byte[] GetBytes();
+        Task<Byte[]> GetBytesAsync();
 
-        void SetBytes(Byte[] bytes);
+        Task SetBytesAsync(Byte[] bytes);
 
-        void Reset();
+        Task ResetAsync();
     }
 
     public interface IDataItem

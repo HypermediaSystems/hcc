@@ -36,6 +36,7 @@
     <Compile Include="FoundationAttribute.cs" />
     <Compile Include="GZip.cs" />
     <Compile Include="HccUtil.cs" />
+    <Compile Include="HttpCachedResponseMessage.cs" />
     <Compile Include="ICache.cs" />
     <Compile Include="HttpCachedClient.cs" />
     <Compile Include="ISql.cs" />
