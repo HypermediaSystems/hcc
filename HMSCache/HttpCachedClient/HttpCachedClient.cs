@@ -13,13 +13,15 @@ namespace HMS.Net.Http
 {
     public class HttpCachedClient : HttpClient
     {
+        #region static
         /// <summary>
         /// This is the basename of the SQLite database.<para/>
         /// We use this hack, since the XF Dependency Service does not support constructors with parameters.<para/>
         /// Default is "hcc".
         /// </summary>
         public static string _dbName { get; set; } = "hcc";
-
+        #endregion
+        #region public properties
         /// <summary>
         /// Include additonal information in the hccInfo object<para/>
         /// Default is true.
@@ -54,6 +56,21 @@ namespace HMS.Net.Http
         public AuthenticationHeaderValue authenticationHeaderValue { get; set; }
 
         /// <summary>
+        /// The data can be zipped before storing it in the cache.<para/>
+        /// 0 = dont zip,
+        /// 1 = use gzip (build-in)
+        /// </summary>
+        public Byte zipped { get; set; } = 1;
+
+        public string errMsg { get; set; }
+        /// <summary>
+        /// the limit of records returned
+        /// </summary>
+        public int SqlLimit { get; set; } = 100;
+
+        #endregion
+        #region delegates
+        /// <summary>
         /// This function is called when decryption is required.
         /// </summary>
         /// <param name="urlRequested"></param>
@@ -80,22 +97,11 @@ namespace HMS.Net.Http
         public delegate int beforeGetAsyncHandler(string urlRequested, HttpCachedClient httpCachedClient);
 
         public beforeGetAsyncHandler beforeGetAsyncFunction { get; set; }
-
-        /// <summary>
-        /// The data can be zipped before storing it in the cache.<para/>
-        /// 0 = dont zip,
-        /// 1 = use gzip (build-in)
-        /// </summary>
-        public Byte zipped { get; set; } = 1;
-
-        public string errMsg { get; set; }
-        /// <summary>
-        /// the limit of records returned
-        /// </summary>
-        public int SqlLimit { get; set; } = 100;
-
+        #endregion
+        #region private properties
         private readonly IDataProvider cache;
-
+        #endregion
+        #region constructor
         /// <summary>
         /// Create a new HttpCachedClient object<para/>
         /// Currently the cache must be a SqLiteCache object.
@@ -105,7 +111,8 @@ namespace HMS.Net.Http
         {
             this.cache = cache;
         }
-
+        #endregion
+        #region db management
         public async Task<Boolean> BackupAsync(string serverUrl, AuthenticationHeaderValue authentication = null)
         {
             Byte[] bytes = await this.cache.GetBytesAsync();
@@ -164,7 +171,11 @@ namespace HMS.Net.Http
                 }
             }
         }
-
+        /// <summary>
+        /// Replace the SqLite database by an empty one, containing only the required tables<para/>
+        /// This will delete all data.
+        /// </summary>
+        /// <returns></returns>
         public Task ResetAsync()
         {
             return this.cache.ResetAsync();
@@ -183,6 +194,13 @@ namespace HMS.Net.Http
             }
             return true;
         }
+        /// <summary>
+        /// Replace the current database with the one stored under the given URL.<para/>
+        /// This will delete all data.
+        /// </summary>
+        /// <param name="serverUrl"></param>
+        /// <param name="authentication"></param>
+        /// <returns></returns>
         public async Task<Boolean> RestoreAsync(string serverUrl , AuthenticationHeaderValue authentication = null )
         {
             using (var client = new HttpClient())
@@ -206,13 +224,52 @@ namespace HMS.Net.Http
             return true;
         }
 
+
+        /// <summary>
+        /// Get the number of bytes stored in the cache.<para/>
+        /// This includes only the data and the header.<para/>
+        /// </summary>
+        /// <returns></returns>
+        public async Task<long> GetCachedSizeAsync()
+        {
+            return await this.cache.SizeAsync();
+        }
+        public long GetCachedSize()
+        {
+            long lret = 0;
+            Task.Run(async () =>
+            {
+                lret = await this.cache.SizeAsync();
+            }).Wait();
+            return lret;
+        }
+        /// <summary>
+        /// Get the number of entries stored in the cache.<para/>
+        /// </summary>
+        /// <returns></returns>
+        public async Task<long> GetCachedCountAsync()
+        {
+            return await this.cache.CountAsync();
+        }
+        public long GetCachedCount()
+        {
+            long lret = 0;
+            Task.Run(async () =>
+            {
+                lret = await this.cache.CountAsync();
+
+            }).Wait();
+            return lret;
+        }
+
+        #endregion
+        #region entry
         /// <summary>
         /// Get the stream for the given url from the cache.<para/>
         /// If there is no entry found in the cache (and this.offline is true), the url is requested with GetAsync().
         /// This can only be successful for absolute urls.
         /// </summary>
         /// <param name="url"></param>
-        /// <param name="callback"></param>
         /// <returns></returns>
         public async Task<HccResponse> GetCachedStreamAsync(string url)
         {
@@ -251,7 +308,7 @@ namespace HMS.Net.Http
                 }
                 hi.size = data.Length;
                 Stream streamToReadFrom = new MemoryStream(data);
-                // callback(new HccResponse( streamToReadFrom, hi));
+
                 return new HccResponse(streamToReadFrom, hi);
             }
             if ( !this.isOffline )
@@ -298,12 +355,10 @@ namespace HMS.Net.Http
                     {
                         hi.hhh = this.cache.GetHeadersFromString(headerString);
                     }
-                    // callback(new HccResponse( strm, hi));
                     return new HccResponse(strm, hi);
                 }
             }
             hi.size = 0;
-            // callback(new HccResponse((Stream) null, hi));
             return new HccResponse((Stream)null, hi);
         }
 
@@ -316,101 +371,61 @@ namespace HMS.Net.Http
         /// <returns></returns>
         public async Task<HccResponse> GetCachedStringAsync(string url)
         {
-            HccResponse hccResponse =  await this.GetCachedStreamAsync(url);
-                if (hccResponse.stream != null)
-                {
-                    var bytes = ((MemoryStream)hccResponse.stream).ToArray();
-                    string str = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                // callback(new HccResponse(str, hccResponse.hccInfo));
+            HccResponse hccResponse = await this.GetCachedStreamAsync(url);
+            if (hccResponse.stream != null)
+            {
+                var bytes = ((MemoryStream)hccResponse.stream).ToArray();
+                string str = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                 return new HccResponse(str, hccResponse.hccInfo);
-                }
-                else
-                {
-                // callback(new HccResponse((string)null, hccResponse.hccInfo));
+            }
+            else
+            {
                 return new HccResponse((string)null, hccResponse.hccInfo);
-                }
-            // }).ConfigureAwait(false);
-            // return 0;
+            }
         }
 
         /// <summary>
-        /// Get the string for the given url from the cache.<para/>
-        /// If there is no entry found in the cache, the url is requested with GetAsync().<para/>
-        /// This can only be successful for absolute urls.
+        /// Add the given string to the cache.<para/>
+        /// The id may be any string, especially a relative url.
         /// </summary>
-        /// <param name="url"></param>
-        /// <param name="callback"></param>
-        /// <returns></returns>
-        public async Task<int> GetCachedStringOldAsync(string url, Action<HccResponse> callback)
+        /// <param name="id"></param>
+        /// <param name="data"></param>
+        public async Task AddCachedStringAsync(string id, string data)
         {
-            HccInfo hi = new HccInfo();
-
-            // check if this is in the cache
-            string data = await this.cache.GetStringAsync(url);
-            if (data != null)
-            {
-                hi.fromDb = true;
-
-                if (this.addInfo )
-                {
-                    IDataItem item = await this.cache.GetInfoAsync(url);
-                    if (item != null)
-                    {
-                        hi.withInfo = true;
-                        hi.set(item);
-                    }
-                }
-                if (this.addHeaders )
-                {
-                    hi.hhh = await this.cache.GetHeadersAsync(url);
-                }
-                if (this.decryptFunction != null && hi.encrypted == 1)
-                {
-                    Byte[] bytes = Encoding.UTF8.GetBytes(data);
-                    bytes = this.decryptFunction(url, bytes);
-                    data = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                }
-
-                // callback(data, hi);
-                return 1;
-            }
-            // ToDo: check for absolute url
-            if (this.authenticationHeaderValue != null)
-                this.DefaultRequestHeaders.Authorization = this.authenticationHeaderValue;
-
-            using (HttpResponseMessage response = await this.GetAsync(url, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false))
-            {
-                string headerString = this.GetCachedHeader(response.Headers);
-
-                string responseString = "";
-                Stream streamToReadFrom = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using (StreamReader theStreamReader = new StreamReader(streamToReadFrom))
-                {
-                    responseString = theStreamReader.ReadToEnd();
-                }
-                hi.responseStatus = response.StatusCode;
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    if (this.encryptFunction != null)
-                    {
-                        Byte[] bytes = Encoding.UTF8.GetBytes(responseString);
-                        bytes = this.encryptFunction(url, bytes);
-                        await this.cache.SetDataAsync(url, bytes, headers: headerString, zipped: this.zipped, encrypted: 1);
-                    }
-                    else
-                    {
-                        await this.cache.SetStringAsync(url, responseString, headers: headerString, zipped: this.zipped);
-                    }
-                }
-                else
-                {
-                    responseString = "";
-                }
-
-                // callback(responseString, hi);
-                return 0;
-            }
+            await this.cache.SetStringAsync(id, data, overwrite: true);
         }
+        /// <summary>
+        /// Add the given stream to the cache.<para/>
+        /// The id may be any string, especially a relative url./// </summary>
+        /// <param name="id"></param>
+        /// <param name="data"></param>
+        /// <param name="headers"></param>
+        /// <param name="overwrite"></param>
+        /// <param name="zipped"></param>
+        /// <param name="encrypted"></param>
+        public async Task AddCachedStreamAsync(string id, byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
+        {
+            await this.cache.SetDataAsync(id, data, headers: headers, overwrite: overwrite, zipped: zipped, encrypted: encrypted);
+        }
+
+        /// <summary>
+        /// Delete the entry from the cache.
+        /// </summary>
+        /// <param name="id"></param>
+        public async Task DeleteCachedDataAsync(string id)
+        {
+            await this.cache.DeleteAsync(id);
+        }
+
+        /// <summary>
+        /// remove all entries from the cache
+        /// </summary>
+        public async Task DeleteAllCachedDataAsync()
+        {
+            await this.cache.DeleteAllDataAsync();
+        }
+        #endregion
+        #region util
         // TODO: this should be moved to HttpCachedResponse.
         public string GetCachedHeader(System.Net.Http.Headers.HttpResponseHeaders headers)
         {
@@ -442,43 +457,6 @@ namespace HMS.Net.Http
             return bld.ToString();
         }
 
-        /// <summary>
-        /// Get the number of bytes stored in the cache.<para/>
-        /// This includes only the data and the header.<para/>
-        /// </summary>
-        /// <returns></returns>
-        public async Task<long> GetCachedSizeAsync()
-        {
-            return await this.cache.SizeAsync();
-        }
-        public long GetCachedSize()
-        {
-            long lret = 0;
-            Task.Run(async () =>
-            {
-                lret = await this.cache.SizeAsync();
-
-            }).Wait();
-            return lret;
-        }
-        /// <summary>
-        /// Get the number of entries stored in the cache.<para/>
-        /// </summary>
-        /// <returns></returns>
-        public async Task<long> GetCachedCountAsync()
-        {
-            return await this.cache.CountAsync();
-        }
-        public long GetCachedCount()
-        {
-            long lret = 0;
-            Task.Run(async () =>
-            {
-                lret = await this.cache.CountAsync();
-
-            }).Wait();
-            return lret;
-        }
 
         /// <summary>
         /// Get the list of cached URLs that contains the text pattern.<para/>
@@ -490,57 +468,50 @@ namespace HMS.Net.Http
         {
             return await this.cache.GetIDsAsync(pattern, this.SqlLimit);
         }
+        #endregion
 
+        #region METADATA
         /// <summary>
-        /// Add the given string to the cache.<para/>
-        /// The id may be any string, especially a relative url.
+        /// Add an entry the Metadata table.
         /// </summary>
         /// <param name="id"></param>
         /// <param name="data"></param>
-        public async Task AddCachedStringAsync(string id, string data)
-        {
-            await this.cache.SetStringAsync(id, data, overwrite: true);
-        }
-        /// <summary>
-        /// Add the given stream to the cache.<para/>
-        /// The id may be any string, especially a relative url./// </summary>
-        /// <param name="id"></param>
-        /// <param name="data"></param>
-        /// <param name="headers"></param>
-        /// <param name="overwrite"></param>
-        /// <param name="zipped"></param>
-        /// <param name="encrypted"></param>
-        public async Task AddCachedStreamAsync(string id, byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0)
-        {
-            await this.cache.SetDataAsync(id, data, headers: headers, overwrite: overwrite, zipped: zipped, encrypted: encrypted);
-        }
-
+        /// <returns></returns>
         public async Task AddCachedMetadataAsync(string id, string data)
         {
             await this.cache.SetMetadataAsync(id, data);
         }
-
+        public async Task<string> GetCachedMetadataAsync(string id)
+        {
+            return await this.cache.GetMetadataAsync(id);
+        }
+        public async Task DeleteCachedMetadataAsync(string id)
+        {
+            await this.cache.DeleteMetadataAsync(id);
+        }
+        #endregion
+        #region ALIAS
+        /// <summary>
+        /// Add an entry to the Alias table.<para/>
+        /// The aliasUrl is like a virtuell Url, the data is stored under url only. 
+        /// </summary>
+        /// <param name="aliasUrl"></param>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public async Task AddCachedAliasUrlAsync(string aliasUrl, string url)
         {
             await this.cache.SetAliasAsync(aliasUrl, url);
         }
-
-        /// <summary>
-        /// Delete the entry from the cache.
-        /// </summary>
-        /// <param name="id"></param>
-        public async Task DeleteCachedDataAsync(string id)
+        public async Task<string> GetCachedAliasUrlAsync(string aliasUrl)
         {
-            await this.cache.DeleteAsync(id);
+            return await this.cache.GetUrlFromAliasAsync(aliasUrl);
         }
-
-        /// <summary>
-        /// remove all entries from the cache
-        /// </summary>
-        public async Task DeleteAllCachedDataAsync()
+        public async Task DeleteCachedAliasAsync(string aliasUrl)
         {
-            await this.cache.DeleteAllDataAsync();
+            await this.cache.DeleteAliasAsync(aliasUrl);
         }
+        #endregion
+
 
         #region DATABAINDING
 
@@ -581,76 +552,5 @@ namespace HMS.Net.Http
         #endregion DATABAINDING
     }
 
-    public class HccHttpHeaders
-
-    {
-        public Dictionary<string, string[]> items { get; set; }
-
-        public HccHttpHeaders()
-        {
-            items = new Dictionary<string, string[]>();
-        }
-    }
-    public class HccResponse
-    {
-        public string json;
-        public Stream stream;
-        public HccInfo hccInfo;
-        public HccResponse(string json, HccInfo hcInfo)
-        {
-            this.json = json;
-            this.hccInfo = hcInfo;
-        }
-        public HccResponse(Stream stream, HccInfo hcInfo)
-        {
-            this.stream = stream;
-            this.hccInfo = hcInfo;
-        }
-    }
-    public class HccInfo : IDataItem
-
-    {
-        public Boolean withInfo { get; set; }
-        public byte zipped { get; set; }
-        public byte encrypted { get; set; }
-        public DateTime lastWrite { get; set; }
-        public DateTime lastRead { get; set; }
-        public DateTime expire { get; set; }
-        public long size { get; set; }
-        public Boolean dontRemove { get; set; }
-        public HccHttpHeaders hhh { get; set; }
-
-        public System.Net.HttpStatusCode responseStatus { get; set; }
-        public Boolean fromDb { get; set; }
-
-        /// <summary>
-        /// This is the url used to lookup the data in the database
-        /// </summary>
-        public string url { get; set; }
-
-        /// <summary>
-        /// This is the requested url
-        /// </summary>
-        public string aliasUrl { get; set; }
-
-        public HccInfo()
-        {
-            fromDb = false;
-            withInfo = false;
-            responseStatus = HttpStatusCode.OK;
-            url = null;
-            aliasUrl = null;
-        }
-
-        public void set(IDataItem src)
-        {
-            this.dontRemove = src.dontRemove;
-            this.encrypted = src.encrypted;
-            this.expire = src.expire;
-            this.lastRead = src.lastRead;
-            this.lastWrite = src.lastWrite;
-            this.size = src.size;
-            this.zipped = src.zipped;
-        }
-    }
+   
 }

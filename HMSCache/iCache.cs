@@ -24,17 +24,21 @@ namespace HMS.Net.Http
 
         Task<string> GetMetadataAsync(string tag);
 
+        Task SetMetadataAsync(string tag, string value);
+        Task DeleteMetadataAsync(string tag);
+
         Task<string> GetUrlFromAliasAsync(string aliasUrl);
 
         Task SetAliasAsync(string aliasUrl, string url);
 
-        Task SetMetadataAsync(string tag, string value);
+        Task DeleteAliasAsync(string aliasUrl);
 
         Task SetStringAsync(string url, string data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0);
 
         Task SetDataAsync(string url, Byte[] data, string headers = "", Boolean overwrite = true, byte zipped = 1, byte encrypted = 0);
 
         Task DeleteAsync(string url);
+
 
         Task<Boolean> ExistsAsync(string url);
 

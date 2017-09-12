@@ -1,8 +1,9 @@
 ﻿{
   "dependencies": {
-    "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0",
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.3",
     "NUnit": "3.6.1",
     "nunit.xamarin": "3.6.1",
+    "NUnit3TestAdapter": "3.8.0",
     "PCLStorage": "1.0.2",
     "sqlite-net-pcl": "1.1.2",
     "Xamarin.Forms": "2.3.4.247"
