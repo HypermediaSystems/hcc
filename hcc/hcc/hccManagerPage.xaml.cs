@@ -134,6 +134,30 @@ namespace hcc
                 server_status_set("Error Restoring from " + serverUrl + " :" + ex.ToString());
             }
         }
+        private void btnReset_Clicked(object sender, EventArgs e)
+        {
+            var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
+            try
+            {
+                Task.Run(async () =>
+                {
+                    await hcClient.ResetAsync().ContinueWith(async t1 =>
+                    {
+                        await hcClient.GetCachedCountAsync().ContinueWith(t =>
+                        {
+                            long cnt = t.Result;
+                            server_status_set("Reseting done: " + cnt);
+                        });
+                    });
+            }).Wait();
+            // server_status_set("Reseting done.");
+        }
+            catch (Exception ex)
+            {
+                server_status_set("Error Reseting:" + ex.ToString());
+            }
+        }
+
 
         private void btnDeleteAll_Clicked(object sender, EventArgs e)
         {
@@ -144,7 +168,7 @@ namespace hcc
             }).Wait();
         }
 
-        private void tbLoop_Clicked(object sender, EventArgs e)
+        private void btnLoop_Clicked(object sender, EventArgs e)
         {
             var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
 
@@ -329,6 +353,7 @@ namespace hcc
                 lblServerStatus.Text = msg;
             });
        }
+
     }
 
     internal class HccManagerNodeEntry

@@ -21,7 +21,7 @@ namespace hcc
             this.sqLiteCache = new SqLiteCache( SQL, "");
         }
 
-        private async void tbGet_ClickedAsync(object sender, EventArgs e)
+        private async void btnGet_ClickedAsync(object sender, EventArgs e)
         {
             string url = tbUrl.Text.Trim();
             tbInfo.Text = "";
@@ -130,7 +130,7 @@ namespace hcc
             }
         }
 
-        private void tbDelete_Clicked(object sender, EventArgs e)
+        private void btnDelete_Clicked(object sender, EventArgs e)
         {
             string url = tbUrl.Text.Trim();
             tbInfo.Text = "";
@@ -143,7 +143,7 @@ namespace hcc
             }).Wait();
         }
 
-        private void tbList_Clicked(object sender, EventArgs e)
+        private void btnList_Clicked(object sender, EventArgs e)
         {
             HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
             string[] ids = null;
@@ -170,6 +170,7 @@ namespace hcc
             Task.Run(async () =>
             {
                  await hc.ResetAsync();
+                long cnt = await hc.GetCachedCountAsync();
             }).Wait();
         }
     }

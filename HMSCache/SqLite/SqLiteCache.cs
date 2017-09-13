@@ -38,35 +38,45 @@ namespace HMS.Net.Http
         #region SqLite Layer
         public async Task CreateAsync()
         {
+            System.Diagnostics.Debug.WriteLine("CreateAsync: start");
             // ToDo: what about migrating the database?
             /* we may get exceptions here when we have breaking changes
              * this must be logged in some way
              */
             try
             {
+                System.Diagnostics.Debug.WriteLine("CreateAsync: CreateTableAsync<SqLiteAlias>");
+
                 await sqlite3.CreateTableAsync<SqLiteAlias>().ContinueWith(async t =>
                 {
                     try
                     {
-                        await sqlite3.CreateTableAsync<SqLiteMetadata>().ContinueWith(async t2 => {
+                        System.Diagnostics.Debug.WriteLine("CreateAsync: CreateTableAsync<SqLiteCacheItem>");
+                        await sqlite3.CreateTableAsync<SqLiteCacheItem>().ContinueWith(async t2 =>
+                        {
                             try
                             {
-                                await sqlite3.CreateTableAsync<SqLiteCacheItem>();
+                                System.Diagnostics.Debug.WriteLine("CreateAsync: CreateTableAsync<SqLiteMetadata>");
+                                await sqlite3.CreateTableAsync<SqLiteMetadata>().ContinueWith(async t3 =>
+                                {
+                                    System.Diagnostics.Debug.WriteLine("CreateAsync: update SqLiteMetadata");
+                                    var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == "hcc.version");
+                                    int anz = await entry.CountAsync();
+                                    if (anz == 0)
+                                    {
+                                        SqLiteMetadata md = new SqLiteMetadata();
+                                        md.tag = "hcc.version";
+                                        md.value = "1.2";
+                                        await sqlite3.InsertAsync(md);
+                                    }
+                                });
                             }
                             catch (Exception ex)
                             {
                                 throw new HccException("Error creating table SqLiteCacheItem ", ex);
                             }
 
-                            var entry = sqlite3.Table<SqLiteMetadata>().Where(i => i.tag == "hcc.version");
-                            int anz = await entry.CountAsync();
-                            if (anz == 0)
-                            {
-                                SqLiteMetadata md = new SqLiteMetadata();
-                                md.tag = "hcc.version";
-                                md.value = "1.2";
-                                await sqlite3.InsertAsync(md);
-                            }
+
                         });
                     }
                     catch (Exception ex)
@@ -80,10 +90,9 @@ namespace HMS.Net.Http
                 throw new HccException("Error creating table SqLiteAlias ", ex);
             }
 
+            System.Diagnostics.Debug.WriteLine("CreateAsync done");
 
-
-            
-            return ;
+            return;
         }
         /// <summary>
         /// Replace the SqLite database by an empty one, containing only the required tables<para/>
@@ -92,12 +101,19 @@ namespace HMS.Net.Http
         /// <returns></returns>
         public async Task ResetAsync()
         {
+            System.Diagnostics.Debug.WriteLine("ResetAsync1: start");
+
+            System.Diagnostics.Debug.WriteLine("ResetAsync2: CloseAsync");
             await this.CloseAsync();
 
+            System.Diagnostics.Debug.WriteLine("ResetAsync3: platformSQL.Reset");
             this.platformSQL.Reset();
+            System.Diagnostics.Debug.WriteLine("ResetAsync4: Reopen");
             this.Reopen();
 
+            System.Diagnostics.Debug.WriteLine("ResetAsync5: CreateAsync");
             await this.CreateAsync();
+            System.Diagnostics.Debug.WriteLine("ResetAsync6: ResetAsync done");
         }
 
         private void Reopen()
@@ -109,6 +125,7 @@ namespace HMS.Net.Http
         {
             if (sqlite3 != null)
             {
+                System.Diagnostics.Debug.WriteLine("CloseAsync start");
                 await Task.Factory.StartNew(() =>
                 {
                     SQLite.SQLiteAsyncConnection.ResetPool();
@@ -118,7 +135,10 @@ namespace HMS.Net.Http
 
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
+                    System.Diagnostics.Debug.WriteLine("CloseAsync done");
                 }).ConfigureAwait(false);
+                System.Diagnostics.Debug.WriteLine("CloseAsync return");
+
             }
         }
 
@@ -168,8 +188,9 @@ namespace HMS.Net.Http
             {
                 return await sqlite3.Table<SqLiteCacheItem>().CountAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine("CountAsync: " + ex);
                 return -1;
             }
         }
@@ -182,9 +203,15 @@ namespace HMS.Net.Http
             {
                 qry = await sqlite3.ExecuteScalarAsync<long>("Select Sum(Size) as SIZE from " + typeof(SqLiteCacheItem).Name);
             }
-            catch (Exception)
+            catch(System.NullReferenceException)
             {
                 // this gets throws when there are no entries in the table
+                qry = 0;
+            }
+            catch (Exception ex)
+            {
+                // this gets throws when there are no entries in the table
+                System.Diagnostics.Debug.WriteLine("SizeAsync: " + ex);
                 qry = 0;
             }
 

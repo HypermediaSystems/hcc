@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>HttpCachedClient.HMS</id>
-    <version>1.0.46</version>
+    <version>1.0.52</version>
     <title>HttpCachedClient.HMS</title>
     <authors>Helmut Theis</authors>
     <owners></owners>
@@ -46,8 +46,8 @@
     <file src="..\HMSCache.Android\bin\Debug\HMSCache.Android.dll" target="lib\MonoAndroid10\HMSCache.Android.dll" />
 
     <!-- UWP reference assemblies -->
-    <file src="..\HMSCache.UWP\bin\Debug\HMSCache.dll" target="lib\uap10.0\HMSCache.dll" />
-    <file src="..\HMSCache.UWP\bin\Debug\HMSCache.UWP.dll" target="lib\uap10.0\HMSCache.UWP.dll" />
+    <file src="..\HMSCache.UWP\bin\x86\Debug\HMSCache.dll" target="lib\uap10.0\HMSCache.dll" />
+    <file src="..\HMSCache.UWP\bin\x86\Debug\HMSCache.UWP.dll" target="lib\uap10.0\HMSCache.UWP.dll" />
 
     <file src="tools\" target="tools" />
     <file src="content\" target="content" />
