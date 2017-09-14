@@ -134,6 +134,7 @@ namespace hcc
                 server_status_set("Error Restoring from " + serverUrl + " :" + ex.ToString());
             }
         }
+
         private void btnReset_Clicked(object sender, EventArgs e)
         {
             var hcClient = (BindingContext as HMS.Net.Http.HttpCachedClient);
