@@ -34,7 +34,13 @@ namespace HMS.Net.Http
                 await sqlite3.DeleteAsync(await entry.FirstOrDefaultAsync());
             }
         }
+        public async Task<string[]> ListAliasAsync()
+        {
+            var list = await sqlite3.QueryAsync<SqLiteAlias>("select aliasUrl from SqLiteAlias").ConfigureAwait(false);
 
+            return list.Select<SqLiteAlias,string>( x => x.aliasUrl).ToArray<string>();
+
+        }
         public async Task<string> GetUrlFromAliasAsync(string aliasUrl)
         {
             string url = aliasUrl;

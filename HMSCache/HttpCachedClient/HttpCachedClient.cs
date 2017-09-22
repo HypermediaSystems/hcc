@@ -276,7 +276,8 @@ namespace HMS.Net.Http
             HccInfo hi = new HccInfo();
 
             string useUrl = await this.cache.GetUrlFromAliasAsync(url);
-
+            System.Diagnostics.Debug.WriteLine("GetCachedStreamAsync:"+ url + " " + useUrl);
+            
             hi.url = url;
             if (useUrl != url)
             {

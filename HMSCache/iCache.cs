@@ -28,6 +28,7 @@ namespace HMS.Net.Http
         Task DeleteMetadataAsync(string tag);
 
         Task<string> GetUrlFromAliasAsync(string aliasUrl);
+        Task<string[]> ListAliasAsync();
 
         Task SetAliasAsync(string aliasUrl, string url);
 
