@@ -153,6 +153,16 @@ namespace hcc
             }).Wait();
             tbInfo.Text = string.Join(Environment.NewLine, ids);
         }
+        private void btnListAlias_Clicked(object sender, EventArgs e)
+        {
+            HttpCachedClient hc = new HttpCachedClient(this.sqLiteCache);
+            string[] aliasList = null;
+            Task.Run(async () =>
+            {
+                 aliasList = await hc.ListAliasAsync();
+            }).Wait();
+            tbInfo.Text = string.Join(Environment.NewLine, aliasList);
+        }
 
         private async void btnManager_ClickedAsync(object sender, EventArgs e)
         {

@@ -89,6 +89,7 @@
                 <Button Grid.Row="1" Grid.Column="0"  x:Name="btnDelete" Text="Delete" Clicked="btnDelete_Clicked" />
                 <Button Grid.Row="1" Grid.Column="1"  x:Name="btnManager" Text="Manager" Clicked="btnManager_ClickedAsync" />
                 <Button Grid.Row="2" Grid.Column="0"  x:Name="btnReset" Text="Reset" Clicked="btnReset_Clicked" />
+                <Button Grid.Row="2" Grid.Column="1"  x:Name="btnListAlias" Text="ListAlias" Clicked="btnListAlias_Clicked" />
             </Grid>
             <Editor x:Name="tbInfo" Text="..." HeightRequest = "300">
                 

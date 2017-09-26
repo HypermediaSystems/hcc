@@ -511,6 +511,10 @@ namespace HMS.Net.Http
         {
             await this.cache.DeleteAliasAsync(aliasUrl);
         }
+        public async Task<string[]> ListAliasAsync()
+        {
+            return await this.cache.ListAliasAsync();
+        }
         #endregion
 
 
