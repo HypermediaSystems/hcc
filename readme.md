@@ -1,11 +1,15 @@
 #Introduction
-With HttpCachedClient it is possible to access internet resources that are seemlessly cached in an SQLite database. So they are available the next time, even if there is no internet connection.
+
+With HttpCachedClient it is possible to access internet resources that are seamlessly cached in an SQLite database. So they are available the next time, even if there is no internet connection.
+
 #Installation
+
 The HttpCachedClient can be installed with NuGet:
 
     nuget install HttpCachedClient
 
 #Get started
+
 The HttpCachedClient requires an object with an implementation of the interface iSQL.
 The NuGet package includes these classes for iOS, Android and UWP.
 E.g.: `iSQL SQL = new HMS.Net.Http.UWP.SQLImplementation.SqlUwp()`
@@ -29,7 +33,9 @@ The `hi` object (`class HccInfo`) contains additional information, especially if
 If the request could not fulfilled from the database and if there is an internet connection, the request is emitted with `GetStringAsync `and the response is stored in the database before being returned to the application.
 
 #WiKi
+
 ##Add authentication
+
 If the internet resource requires authentication data it is possible to pass a `AuthenticationHeaderValue`
  object.
 Additional there is a `beforeGetAsyncHandler` callback that can be set:
@@ -43,6 +49,7 @@ HttpCachedClient is subclass of HttpClient, so you can set additional headers he
     };
 
 ##Get header data
+
 With the property `string[] includeHeaders` can be defined which headers should be stored and returned: 
 
 - null, add no headers,
@@ -54,6 +61,7 @@ If the request is fulfilled from the internet, the set of headers is filtered be
 
 
 ##Add data directly without an HttpRequest
+
 With the two functions:
 
 -`void AddCachedString(string id, string data)`
@@ -109,11 +117,13 @@ You may remove data from the cache with `DeleteCachedData()`, even for a relativ
 But you may not reload the data for relative urls with a `GetCachedxxx` function.
 
 ##Release mode
+
 In Release mode the linker may incorrectly drop required classes.
 (s.  [https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed](https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed) )
 To avoid this add do the following:
 
 ###iOS
+
 Add
 
 	Xamarin.Forms.DependencyService.Register<HMS.Net.Http.iOS.SQLImplementation.SqliOS>();
@@ -122,6 +132,7 @@ to AppDelegate.cs in the function
 	public override bool FinishedLaunching(UIApplication app, NSDictionary options)
 
 ###UWP
+
 Add
 	
 	Xamarin.Forms.DependencyService.Register<HMS.Net.Http.UWP.SQLImplementation.SqlUWP>();
@@ -130,6 +141,7 @@ to MainPage.xaml.cs  in the constructor
 	public MainPage()
 
 ###Android
+
 Add
 
 	Xamarin.Forms.DependencyService.Register<HMS.Net.Http.Android.SQLImplementation.SqlAndroid>();
@@ -140,4 +152,5 @@ to MainActivity.cs in the function
 
 
 ##Profiles
+
 https://portablelibraryprofiles.stephencleary.com/
