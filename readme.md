@@ -1,14 +1,14 @@
-#Introduction
+# Introduction
 
 With HttpCachedClient it is possible to access internet resources that are seamlessly cached in an SQLite database. So they are available the next time, even if there is no internet connection.
 
-#Installation
+# Installation
 
 The HttpCachedClient can be installed with NuGet:
 
     nuget install HttpCachedClient
 
-#Get started
+# Get started
 
 The HttpCachedClient requires an object with an implementation of the interface iSQL.
 The NuGet package includes these classes for iOS, Android and UWP.
@@ -32,9 +32,9 @@ The `hi` object (`class HccInfo`) contains additional information, especially if
 
 If the request could not fulfilled from the database and if there is an internet connection, the request is emitted with `GetStringAsync `and the response is stored in the database before being returned to the application.
 
-#WiKi
+# WiKi
 
-##Add authentication
+## Add authentication
 
 If the internet resource requires authentication data it is possible to pass a `AuthenticationHeaderValue`
  object.
@@ -48,7 +48,7 @@ HttpCachedClient is subclass of HttpClient, so you can set additional headers he
         return 0;
     };
 
-##Get header data
+## Get header data
 
 With the property `string[] includeHeaders` can be defined which headers should be stored and returned: 
 
@@ -60,7 +60,7 @@ If the request is fulfilled from the internet, the set of headers is filtered be
 
 
 
-##Add data directly without an HttpRequest
+## Add data directly without an HttpRequest
 
 With the two functions:
 
@@ -78,20 +78,20 @@ you can add data directly to the database. id should be the url under which the 
 
 Note that `AddCachedString` calls `AddCachedStream` after creating a byte array from the string. with `Encoding.UTF8.GetBytes(data)`.
  
-##Delete data from the cache
+## Delete data from the cache
 
 You can delete an entry from the database with `void DeleteCachedData(string id)` and all entries with `void DeleteAllCachedData()`.
 
 Note that some entries in the database may be fixed, so they will not be deleted.
 
-##Make undeleteable entries
+## Make undeleteable entries
 
 
-##Backup and restore
+## Backup and restore
 
 
 
-##Encryption
+## Encryption
 
 You can set the parameter encrypted in the call to AddCached...() and GetChached...() functions to 1. In this case a encryption callback will be called before the data is stored in the database. If a request is fullfilled from the database and the entry is encrypted, the decryption callback is called.
   
@@ -116,13 +116,13 @@ The `url` passed to the `GetCachedxxx` functions must always be absolute urls, s
 You may remove data from the cache with `DeleteCachedData()`, even for a relative url. 
 But you may not reload the data for relative urls with a `GetCachedxxx` function.
 
-##Release mode
+## Release mode
 
 In Release mode the linker may incorrectly drop required classes.
 (s.  [https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed](https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed) )
 To avoid this add do the following:
 
-###iOS
+### iOS
 
 Add
 
@@ -131,7 +131,7 @@ to AppDelegate.cs in the function
  
 	public override bool FinishedLaunching(UIApplication app, NSDictionary options)
 
-###UWP
+### UWP
 
 Add
 	
@@ -140,7 +140,7 @@ to MainPage.xaml.cs  in the constructor
 
 	public MainPage()
 
-###Android
+### Android
 
 Add
 
@@ -151,6 +151,6 @@ to MainActivity.cs in the function
 	protected override void OnCreate(Bundle bundle)
 
 
-##Profiles
+## Profiles
 
 https://portablelibraryprofiles.stephencleary.com/
