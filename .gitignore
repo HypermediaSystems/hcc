@@ -21,6 +21,7 @@
 bld/
 [Bb]in/
 [Oo]bj/
+*.nupkg.bak
 
 # Visual Studio 2015 cache/options directory
 .vs/
