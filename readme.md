@@ -1,6 +1,6 @@
 # Introduction
 
-With HttpCachedClient it is possible to access internet resources that are seamlessly cached in an SQLite database. So they are available the next time, even if there is no internet connection.
+With **HttpCachedClient** it is possible to access internet resources that are seamlessly cached in an SQLite database. So they are available the next time, even if there is no internet connection.
 
 # Installation
 
@@ -10,41 +10,44 @@ The HttpCachedClient can be installed with NuGet:
 
 # Get started
 
-The HttpCachedClient requires an object with an implementation of the interface iSQL.
+The **HttpCachedClient** requires an object with an implementation of the interface iSQL.
 The NuGet package includes these classes for iOS, Android and UWP.
-E.g.: `iSQL SQL = new HMS.Net.Http.UWP.SQLImplementation.SqlUwp()`
-An HttpCachedClient object can be instantiated in a portable class library as follows:
+E.g.:
 
-       this.SQL = SQL; //  Xamarin.Forms.DependencyService.Get<iSQL>();
+     `iSQL SQL = new HMS.Net.Http.UWP.SQLImplementation.SqlUwp()`
+
+An **HttpCachedClient** object can be instantiated in a portable class library as follows:
+
+       this.SQL = SQL; 
        this.sqLiteCache = new SqLiteCache(SQL, "");
        this.hcClient = new HttpCachedClient(this.sqLiteCache);
 
-Normally you will create the object once in an application rather than using an using statement. It is is possible to have several `HttpCachedClient` object at the same time. But all requests will be stores in the same database.
+Normally you will create the object once in an application rather than using an using statement. It is is possible to have several `HttpCachedClient` objects at the same time. But all requests will be stores in the same database.
 
 A string is requested as follows:
 
-          await hc.GetCachedStringAsync(url, (json, hi) =>
-           {   }(ConfigureAwait(false);
-`json` will contain the returned data, which in most cases will be JSON, hence the name.
-There is also a GetCachedStreamAsync, which will return a stream.
+           HccResponse hccResponse = await hc.GetCachedStringAsync(url);
 
-The `hi` object (`class HccInfo`) contains additional information, especially if the request was fulfilled from the database.
+`hccResponse.json` will contain the returned data:, which in most cases will be JSON, hence the name.
+There is also a `GetCachedStreamAsync`, which will return a stream in `hccResponse.stream` 
 
-If the request could not fulfilled from the database and if there is an internet connection, the request is emitted with `GetStringAsync `and the response is stored in the database before being returned to the application.
+The `hccResponse.hccInfo` object (`class HccInfo`) contains additional information, e.g. if the request was fulfilled from the database.
+
+If the request could not fulfilled from the database and if there is an internet connection, the request is emitted with `GetAsync `and the response is stored in the database before being returned to the application.
 
 # WiKi
 
 ## Add authentication
 
-If the internet resource requires authentication data it is possible to pass a `AuthenticationHeaderValue`
- object.
-Additional there is a `beforeGetAsyncHandler` callback that can be set:
+If the internet resource requires authentication data it is possible to pass a `AuthenticationHeaderValue`  object.
+Additionally there is a `beforeGetAsyncHandler` callback that can be set:
     public delegate int beforeGetAsyncHandler(string urlRequested, HttpCachedClient httpCachedClient);
 
 HttpCachedClient is subclass of HttpClient, so you can set additional headers here: 
 
     hc.beforeGetAsyncFunction = (urlRequested, httpCachedClient) => {
-        httpCachedClient.DefaultRequestHeaders.Add("X-Clacks-Overhead", "GNU Terry Pratchett");
+        httpCachedClient.DefaultRequestHeaders.Add(
+             "X-Clacks-Overhead", "GNU Terry Pratchett");
         return 0;
     };
 
@@ -89,68 +92,42 @@ Note that some entries in the database may be fixed, so they will not be deleted
 
 ## Backup and restore
 
+     string serverUrl;
+     await hcClient.BackupAsync(serverUrl);
 
+This will send the SqLite database as a byte array in a multipart message with `PostAsync` to the given serverUrl.
+
+     await hcClient.RestoreAsync(serverUrl);
+
+This will fetch the bay data from the given server and replace the local SqLite database.
 
 ## Encryption
 
-You can set the parameter encrypted in the call to AddCached...() and GetChached...() functions to 1. In this case a encryption callback will be called before the data is stored in the database. If a request is fullfilled from the database and the entry is encrypted, the decryption callback is called.
-  
+You can set the parameter `encrypted` in the call to `AddCached...()` and `GetCached...()` functions to `1`. In this case an encryption callback will be called before the data is stored in the database. If a request is fullfilled from the database and the entry is encrypted, the decryption callback is called.
+
+## Read-only database
+
+When the property `hccClient.isReadonly` is set to true, requested data will not be stored in the database.
+
+## Offline
+
+When the property `hccClient.isOffline` is set to true, requests that can not be fulfilled from the database will return null as string or stream.
 
 
-
+## Finally
 
 
 HttpCachedClient is a subclass of System.Web.HttpClient. The additional functions and properties contain Cached, e.g. GetCachedString().
 
 
-
 Each entry in the cache is identified by an `url`.
 The cache can be filled with in 2 different ways:
-
 
 1. `GetCachedString()` or `GetCachedData()`
 2. `AddCachedString()` or `AddCachedData()`
 
-The `url` passed to the `GetCachedxxx` functions must always be absolute urls, starting with `http://` or `https://`.
+The `url` passed to the `GetCached...` functions must always be absolute urls, starting with `http://` or `https://`.
 
 You may remove data from the cache with `DeleteCachedData()`, even for a relative url. 
-But you may not reload the data for relative urls with a `GetCachedxxx` function.
+But you may not reload the data for relative urls with a `GetCached...` function.
 
-## Release mode
-
-In Release mode the linker may incorrectly drop required classes.
-(s.  [https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed](https://forums.xamarin.com/discussion/57462/dependencyservice-get-returns-null-only-1-platform-installed) )
-To avoid this add do the following:
-
-### iOS
-
-Add
-
-	Xamarin.Forms.DependencyService.Register<HMS.Net.Http.iOS.SQLImplementation.SqliOS>();
-to AppDelegate.cs in the function
- 
-	public override bool FinishedLaunching(UIApplication app, NSDictionary options)
-
-### UWP
-
-Add
-	
-	Xamarin.Forms.DependencyService.Register<HMS.Net.Http.UWP.SQLImplementation.SqlUWP>();
-to MainPage.xaml.cs  in the constructor 
-
-	public MainPage()
-
-### Android
-
-Add
-
-	Xamarin.Forms.DependencyService.Register<HMS.Net.Http.Android.SQLImplementation.SqlAndroid>();
-
-to MainActivity.cs in the function
-
-	protected override void OnCreate(Bundle bundle)
-
-
-## Profiles
-
-https://portablelibraryprofiles.stephencleary.com/
